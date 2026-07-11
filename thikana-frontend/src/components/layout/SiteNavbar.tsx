@@ -135,7 +135,7 @@ export function MobileNavBar() {
           <nav
             id="mobile-nav-menu"
             aria-label="Main"
-            className="absolute inset-x-0 top-full z-50 max-h-[min(28rem,calc(100dvh-5rem))] overflow-y-auto border-b border-brand-dark/10 bg-surface px-4 py-4 shadow-sm sm:px-6"
+            className="absolute inset-x-0 top-full z-50 max-h-[min(28rem,calc(100dvh-5rem))] overflow-y-auto border-b border-white/70 bg-surface/85 px-4 py-4 shadow-[0_8px_32px_rgba(10,10,10,0.06)] backdrop-blur-md sm:px-6"
           >
             <ul className="flex flex-col gap-3">
               {headerNavigation.map((item) => (
