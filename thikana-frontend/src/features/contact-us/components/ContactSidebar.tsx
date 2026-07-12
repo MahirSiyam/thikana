@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { routes } from "@/config/routes";
 import {
   contactFaqs,
   contactSocialLinks,
@@ -35,12 +37,12 @@ export function ContactSidebar() {
             </li>
           ))}
         </ul>
-        <button
-          type="button"
+        <Link
+          href={routes.faq}
           className="self-start font-inter text-[13px] font-semibold text-brand-dark underline underline-offset-2 transition-opacity hover:opacity-70"
         >
           See All FAQs →
-        </button>
+        </Link>
       </div>
 
       <div className="flex flex-col gap-5 rounded-xl border border-brand-dark/20 bg-white p-6">

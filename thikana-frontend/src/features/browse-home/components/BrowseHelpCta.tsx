@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { Container } from "@/components/shared/Container";
+import { routes } from "@/config/routes";
 
 export function BrowseHelpCta() {
   return (
@@ -13,18 +15,18 @@ export function BrowseHelpCta() {
               Need help to finding your dream house?
             </h2>
             <div className="flex w-full flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-4">
-              <button
-                type="button"
+              <Link
+                href={routes.faq}
                 className="inline-flex h-14 w-full max-w-[300px] items-center justify-center rounded-full bg-white px-4 font-inter text-base font-bold text-brand-dark transition-colors hover:bg-white/90 sm:h-[72px] sm:text-lg lg:h-[108px] lg:text-xl"
               >
                 Read FAQ
-              </button>
-              <button
-                type="button"
+              </Link>
+              <Link
+                href={routes.contactUs}
                 className="inline-flex h-14 w-full max-w-[300px] items-center justify-center rounded-full border-2 border-white px-4 font-inter text-base font-bold text-white transition-colors hover:bg-white/10 sm:h-[72px] sm:text-lg lg:h-[108px] lg:text-xl"
               >
                 Contact Us
-              </button>
+              </Link>
             </div>
           </div>
         </div>
