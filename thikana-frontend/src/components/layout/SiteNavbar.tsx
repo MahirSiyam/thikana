@@ -26,7 +26,13 @@ function useHeaderNavItems() {
           href={item.href}
           isActive={isActive}
           onClick={onNavigate}
-          className={onNavigate ? "w-full justify-center" : undefined}
+          className={
+            onNavigate
+              ? "w-full justify-center"
+              : item.label === "Browse Houses"
+                ? "min-w-[7.5rem] justify-center md:min-w-[8.75rem] lg:min-w-[168px]"
+                : undefined
+          }
         />
       );
     }
@@ -40,13 +46,7 @@ function useHeaderNavItems() {
           onClick={() =>
             setOpenDropdown((current) => (current === item.label ? null : item.label))
           }
-          className={
-            onNavigate
-              ? "w-full justify-center"
-              : item.label === "Browse Houses"
-                ? "min-w-[7.5rem] justify-center md:min-w-[8.75rem] lg:min-w-[168px]"
-                : undefined
-          }
+          className={onNavigate ? "w-full justify-center" : undefined}
         />
       );
     }
