@@ -14,7 +14,15 @@ import { SignupStepper } from "@/features/signup/components/SignupStepper";
 const fieldClassName =
   "h-[52px] w-full rounded-[10px] border border-[#e5e5e2] bg-white px-4 font-inter text-[15px] text-brand-dark outline-none placeholder:text-brand-dark/50 focus-visible:ring-2 focus-visible:ring-brand-dark/20";
 
-export function TenantBasicInfoForm() {
+type TenantBasicInfoFormProps = {
+  backHref?: string;
+  nextHref?: string | null;
+};
+
+export function TenantBasicInfoForm({
+  backHref = routes.signUpTenant,
+  nextHref = routes.signUpTenantVerifyOtp,
+}: TenantBasicInfoFormProps = {}) {
   const router = useRouter();
   const formId = useId();
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +36,9 @@ export function TenantBasicInfoForm() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    router.push(routes.signUpTenantVerifyOtp);
+    if (nextHref) {
+      router.push(nextHref);
+    }
   };
 
   return (
@@ -43,7 +53,7 @@ export function TenantBasicInfoForm() {
         >
           <button
             type="button"
-            onClick={() => router.push(routes.signUpTenant)}
+            onClick={() => router.push(backHref)}
             className="self-start font-inter text-sm font-semibold text-brand-dark/50 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
           >
             {tenantBasicInfoCopy.backLabel}
