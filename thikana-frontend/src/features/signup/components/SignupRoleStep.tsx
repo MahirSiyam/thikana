@@ -12,13 +12,39 @@ import {
 import type { SignupRoleId } from "@/features/signup/types/signup.types";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
 
-export function SignupRoleStep() {
+const roleRoutes: Partial<Record<SignupRoleId, string>> = {
+  tenant: routes.signUpTenant,
+  "property-owner": routes.signUpOwner,
+  "service-provider": routes.signUpServiceProvider,
+};
+
+type SignupRoleStepProps = {
+  initialRole?: SignupRoleId;
+};
+
+export function SignupRoleStep({ initialRole = "tenant" }: SignupRoleStepProps) {
   const router = useRouter();
-  const [selectedRole, setSelectedRole] = useState<SignupRoleId>("tenant");
+  const [selectedRole, setSelectedRole] = useState<SignupRoleId>(initialRole);
+
+  const handleSelectRole = (roleId: SignupRoleId) => {
+    setSelectedRole(roleId);
+    const nextRoute = roleRoutes[roleId];
+    if (nextRoute) {
+      router.push(nextRoute);
+    }
+  };
 
   const handleContinue = () => {
     if (selectedRole === "tenant") {
       router.push(routes.signUpTenantForm);
+      return;
+    }
+    if (selectedRole === "property-owner") {
+      router.push(routes.signUpOwnerForm);
+      return;
+    }
+    if (selectedRole === "service-provider") {
+      router.push(routes.signUpServiceProviderForm);
     }
   };
 
@@ -47,7 +73,7 @@ export function SignupRoleStep() {
                       type="button"
                       role="option"
                       aria-selected={isSelected}
-                      onClick={() => setSelectedRole(role.id)}
+                      onClick={() => handleSelectRole(role.id)}
                       className={`flex w-full items-center gap-3 rounded-[10px] p-3 text-left transition-colors ${
                         isSelected
                           ? "border-2 border-[#161616] bg-[#f5f5f0]"
