@@ -9,7 +9,15 @@ import { SignupStepper } from "@/features/signup/components/SignupStepper";
 
 type UploadSlot = "nid-front" | "nid-back" | "selfie";
 
-export function TenantVerifyIdentityForm() {
+type TenantVerifyIdentityFormProps = {
+  backHref?: string;
+  nextHref?: string | null;
+};
+
+export function TenantVerifyIdentityForm({
+  backHref = routes.signUpTenantVerifyOtp,
+  nextHref = routes.signUpTenantDetails,
+}: TenantVerifyIdentityFormProps = {}) {
   const router = useRouter();
   const formId = useId();
   const [files, setFiles] = useState<Partial<Record<UploadSlot, string>>>({});
@@ -22,13 +30,15 @@ export function TenantVerifyIdentityForm() {
     }));
   };
 
-  const goToDetails = () => {
-    router.push(routes.signUpTenantDetails);
+  const goNext = () => {
+    if (nextHref) {
+      router.push(nextHref);
+    }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    goToDetails();
+    goNext();
   };
 
   return (
@@ -42,7 +52,7 @@ export function TenantVerifyIdentityForm() {
       >
         <button
           type="button"
-          onClick={() => router.push(routes.signUpTenantVerifyOtp)}
+          onClick={() => router.push(backHref)}
           className="self-start font-inter text-sm font-semibold text-brand-dark/50 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
         >
           ← Back
@@ -114,7 +124,7 @@ export function TenantVerifyIdentityForm() {
           </button>
           <button
             type="button"
-            onClick={goToDetails}
+            onClick={goNext}
             className="font-inter text-sm font-semibold text-brand-dark/50 transition-opacity hover:opacity-70"
           >
             Skip for now - verify later

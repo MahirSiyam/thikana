@@ -17,7 +17,15 @@ import { SignupStepper } from "@/features/signup/components/SignupStepper";
 
 const OTP_LENGTH = 6;
 
-export function TenantVerifyOtpForm() {
+type TenantVerifyOtpFormProps = {
+  backHref?: string;
+  nextHref?: string | null;
+};
+
+export function TenantVerifyOtpForm({
+  backHref = routes.signUpTenantForm,
+  nextHref = routes.signUpTenantVerifyIdentity,
+}: TenantVerifyOtpFormProps = {}) {
   const router = useRouter();
   const formId = useId();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
@@ -62,7 +70,9 @@ export function TenantVerifyOtpForm() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    router.push(routes.signUpTenantVerifyIdentity);
+    if (nextHref) {
+      router.push(nextHref);
+    }
   };
 
   const handleResend = () => {
@@ -79,7 +89,7 @@ export function TenantVerifyOtpForm() {
       <div className="w-full max-w-[466px] rounded-xl bg-white px-4 py-4 shadow-[4px_4px_5px_rgba(10,10,10,0.1)] sm:px-6 sm:py-5">
         <button
           type="button"
-          onClick={() => router.push(routes.signUpTenantForm)}
+          onClick={() => router.push(backHref)}
           className="mb-3 self-start font-inter text-sm font-semibold text-brand-dark/50 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
         >
           ← Back
