@@ -13,6 +13,7 @@ export type HeaderNavItem = {
 
 export type HeaderAuthItem = {
   label: string;
+  href?: string;
   variant: "text" | "primary";
 };
 
@@ -25,7 +26,7 @@ export const headerNavigation: HeaderNavItem[] = [
 ];
 
 export const headerAuthActions: HeaderAuthItem[] = [
-  { label: "Sign In", variant: "text" },
+  { label: "Sign In", href: routes.signIn, variant: "text" },
   { label: "Sign Up", variant: "primary" },
 ];
 

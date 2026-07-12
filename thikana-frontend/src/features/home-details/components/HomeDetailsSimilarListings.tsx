@@ -2,15 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import type { BrowseHouseListing } from "@/features/browse-home/types/browse-home.types";
+import { useRef, useState } from "react";
+import { homeDetailsSimilarListings } from "@/features/home-details/data/home-details.mock";
+import type { HomeDetailsSimilarListing } from "@/features/home-details/types/home-details.types";
 import { routes } from "@/config/routes";
 
-type BrowseListingCardProps = {
-  listing: BrowseHouseListing;
-};
-
-export function BrowseListingCard({ listing }: BrowseListingCardProps) {
+function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing }) {
   const [saved, setSaved] = useState(false);
 
   return (
@@ -21,7 +18,7 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
           alt={listing.title}
           fill
           className="rounded-t-[10px] object-cover"
-          sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 295px"
+          sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 400px"
         />
 
         <div className="absolute left-3 top-3">
@@ -75,7 +72,7 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
               aria-hidden="true"
               className="shrink-0"
             />
-            <p className="truncate font-inter text-[13px] text-[#6b7280]">{listing.location}</p>
+            <p className="truncate font-inter text-[13px] text-brand-dark/50">{listing.location}</p>
           </div>
         </div>
 
@@ -88,7 +85,7 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
               height={14}
               aria-hidden="true"
             />
-            <span className="font-inter text-xs text-[#6b7280]">{listing.beds} Beds</span>
+            <span className="font-inter text-xs text-brand-dark/50">{listing.beds} Beds</span>
           </div>
           <div className="flex items-center gap-1">
             <Image
@@ -98,7 +95,7 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
               height={14}
               aria-hidden="true"
             />
-            <span className="font-inter text-xs text-[#6b7280]">{listing.baths} Bath</span>
+            <span className="font-inter text-xs text-brand-dark/50">{listing.baths} Bath</span>
           </div>
           <div className="flex items-center gap-1">
             <Image
@@ -108,12 +105,12 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
               height={14}
               aria-hidden="true"
             />
-            <span className="font-inter text-xs text-[#6b7280]">{listing.sqft} sqft</span>
+            <span className="font-inter text-xs text-brand-dark/50">{listing.sqft} sqft</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="font-inter text-xs text-[#9ca3af]">({listing.reviewCount} reviews)</p>
+          <p className="font-inter text-xs text-brand-dark">({listing.reviewCount} reviews)</p>
           <Link
             href={routes.homeDetails}
             className="inline-flex shrink-0 items-center rounded-(--nav-pill-radius) bg-brand-dark px-3 py-2 font-inter text-xs font-semibold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
@@ -123,5 +120,75 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
         </div>
       </div>
     </article>
+  );
+}
+
+export function HomeDetailsSimilarListings() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollByCard = (direction: "prev" | "next") => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const amount = Math.min(container.clientWidth * 0.85, 420);
+    container.scrollBy({
+      left: direction === "next" ? amount : -amount,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <section className="bg-surface py-16 sm:py-20" aria-labelledby="similar-listings-heading">
+      <div className="mx-auto w-full max-w-(--container-max) px-4 sm:px-5 lg:px-6 xl:px-8 2xl:px-10">
+        <div className="flex items-center justify-between gap-4">
+          <h2 id="similar-listings-heading" className="font-inter text-2xl font-semibold text-black">
+            Similar Listings
+          </h2>
+          <div className="flex items-start gap-4">
+            <button
+              type="button"
+              aria-label="Previous similar listings"
+              onClick={() => scrollByCard("prev")}
+              className="inline-flex size-10 items-center justify-center rounded-[20px] border border-[#e5e5e2] bg-white transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark"
+            >
+              <Image
+                src="/images/home-details/icon-arrow-left.svg"
+                alt=""
+                width={20}
+                height={20}
+                aria-hidden="true"
+              />
+            </button>
+            <button
+              type="button"
+              aria-label="Next similar listings"
+              onClick={() => scrollByCard("next")}
+              className="inline-flex size-10 items-center justify-center rounded-[20px] border border-[#e5e5e2] bg-white transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark"
+            >
+              <Image
+                src="/images/home-details/icon-arrow-right.svg"
+                alt=""
+                width={20}
+                height={20}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div
+          ref={scrollRef}
+          className="mt-6 flex gap-5 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {homeDetailsSimilarListings.map((listing) => (
+            <div
+              key={listing.id}
+              className="w-[min(100%,398px)] shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"
+            >
+              <SimilarListingCard listing={listing} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
