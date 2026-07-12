@@ -83,33 +83,66 @@ export function HeaderAuthActions({
 }: HeaderAuthActionsProps) {
   return (
     <div className={`flex shrink-0 items-center justify-end gap-1.5 sm:gap-2 ${className}`}>
-      {headerAuthActions.map((action) =>
-        action.variant === "text" ? (
+      {headerAuthActions.map((action) => {
+        const textClassName = `whitespace-nowrap px-1.5 font-semibold text-brand-dark transition-colors hover:text-brand-dark/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
+          compact ? "py-2 text-sm" : "py-2 text-sm md:py-3 md:text-[15px] lg:py-5 lg:text-base"
+        }`;
+        const primaryClassName = `inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-(--nav-pill-radius) bg-brand-dark font-bold text-brand-light-text transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
+          compact
+            ? "h-11 min-w-[88px] px-3 text-sm"
+            : "h-11 min-w-[88px] px-3 text-sm md:h-[52px] md:min-w-[92px] md:text-[15px] lg:h-[59px] lg:min-w-[100px] lg:px-5 lg:text-base"
+        }`;
+
+        if (action.variant === "text") {
+          if (action.href) {
+            return (
+              <Link
+                key={action.label}
+                href={action.href}
+                onClick={onActionClick}
+                className={textClassName}
+              >
+                {action.label}
+              </Link>
+            );
+          }
+
+          return (
+            <button
+              key={action.label}
+              type="button"
+              onClick={onActionClick}
+              className={textClassName}
+            >
+              {action.label}
+            </button>
+          );
+        }
+
+        if (action.href) {
+          return (
+            <Link
+              key={action.label}
+              href={action.href}
+              onClick={onActionClick}
+              className={primaryClassName}
+            >
+              {action.label}
+            </Link>
+          );
+        }
+
+        return (
           <button
             key={action.label}
             type="button"
             onClick={onActionClick}
-            className={`whitespace-nowrap px-1.5 font-semibold text-brand-dark transition-colors hover:text-brand-dark/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
-              compact ? "py-2 text-sm" : "py-2 text-sm md:py-3 md:text-[15px] lg:py-5 lg:text-base"
-            }`}
+            className={primaryClassName}
           >
             {action.label}
           </button>
-        ) : (
-          <button
-            key={action.label}
-            type="button"
-            onClick={onActionClick}
-            className={`inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-(--nav-pill-radius) bg-brand-dark font-bold text-brand-light-text transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
-              compact
-                ? "h-11 min-w-[88px] px-3 text-sm"
-                : "h-11 min-w-[88px] px-3 text-sm md:h-[52px] md:min-w-[92px] md:text-[15px] lg:h-[59px] lg:min-w-[100px] lg:px-5 lg:text-base"
-            }`}
-          >
-            {action.label}
-          </button>
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }
