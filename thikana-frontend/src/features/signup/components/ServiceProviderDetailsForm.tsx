@@ -27,7 +27,6 @@ export function ServiceProviderDetailsForm() {
   const [areas, setAreas] = useState<string[]>(["Dhanmondi", "Mohammadpur"]);
   const [areaDraft, setAreaDraft] = useState("");
   const [certificateName, setCertificateName] = useState<string | undefined>();
-  const [photoName, setPhotoName] = useState<string | undefined>();
   const [bio, setBio] = useState("");
 
   const addArea = () => {
@@ -188,54 +187,6 @@ export function ServiceProviderDetailsForm() {
                 }}
               />
             </label>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <p className="font-inter text-[13px] font-semibold text-black">
-              {serviceProviderDetailsCopy.photoLabel}
-            </p>
-            <div className="flex items-center gap-4">
-              <label
-                htmlFor={`${formId}-photo`}
-                className="relative size-24 shrink-0 cursor-pointer rounded-full border border-dashed border-[#e5e5e2] bg-[#e5e5e2] focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-dark focus-within:ring-offset-2"
-              >
-                <span className="flex size-full items-center justify-center">
-                  <Image
-                    src="/images/signup/user-avatar.svg"
-                    alt=""
-                    width={32}
-                    height={32}
-                    aria-hidden="true"
-                    className="size-8"
-                  />
-                </span>
-                <span className="absolute -bottom-px -right-px flex size-7 items-center justify-center rounded-[14px] bg-[#0f0f0f]">
-                  <Image
-                    src="/images/signup/camera-badge.svg"
-                    alt=""
-                    width={14}
-                    height={14}
-                    aria-hidden="true"
-                    className="size-3.5"
-                  />
-                </span>
-                <input
-                  id={`${formId}-photo`}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    setPhotoName(file ? file.name : undefined);
-                  }}
-                />
-              </label>
-              <p className="font-inter text-sm text-brand-dark/50">
-                {photoName
-                  ? `Selected: ${photoName}`
-                  : serviceProviderDetailsCopy.photoHint}
-              </p>
-            </div>
           </div>
 
           <div className="flex flex-col gap-2">
