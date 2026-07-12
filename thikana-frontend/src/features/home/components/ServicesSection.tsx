@@ -1,5 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Container } from "@/components/shared/Container";
+import { routes } from "@/config/routes";
 import { homeServices } from "@/features/home/data/home.mock";
 
 export function ServicesSection() {
@@ -41,12 +43,12 @@ export function ServicesSection() {
         </div>
 
         <div className="mt-8 flex justify-center">
-          <button
-            type="button"
-            className="inline-flex h-16 items-center justify-center rounded-(--nav-pill-radius) bg-brand-dark px-4 text-xl font-bold text-white"
+          <Link
+            href={routes.services}
+            className="inline-flex h-16 items-center justify-center rounded-(--nav-pill-radius) bg-brand-dark px-4 text-xl font-bold text-white transition-colors hover:bg-brand-dark/90"
           >
             View All Services
-          </button>
+          </Link>
         </div>
       </Container>
     </section>
