@@ -17,11 +17,11 @@ const providerLinks = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden bg-black text-white">
+    <footer className="relative bg-black text-white">
       <div className="absolute inset-0 bg-black" aria-hidden="true" />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25 [background-image:url('/images/home/footer-cityscape-bg.webp')] lg:bg-fixed"
+        className="absolute inset-0 bg-[url('/images/home/footer.png')] bg-cover bg-position-[center_42%] bg-no-repeat opacity-40 sm:bg-position-[center_40%] md:bg-center lg:bg-fixed lg:bg-position-[center_45%] xl:bg-center"
       />
 
       <Container className="relative z-10 py-10 sm:py-12 lg:py-16">
