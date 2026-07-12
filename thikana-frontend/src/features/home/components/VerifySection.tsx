@@ -36,7 +36,7 @@ export function VerifySection() {
         <div className="absolute inset-0 bg-black" aria-hidden="true" />
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 [background-image:url('/images/home/verification-city-background.png')] lg:bg-fixed"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-50 [background-image:url('/images/home/verification-city-background.png')] lg:bg-fixed"
         />
 
         <Container className="relative z-10 py-12 pb-16 sm:py-16 sm:pb-16 md:py-20 lg:py-[100px]">
