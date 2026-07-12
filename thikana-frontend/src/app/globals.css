@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --radius: 0.5rem;
+  --container-max: 100rem;
+  --surface: #fbfaf8;
+  --brand-dark: #0a0a0a;
+  --brand-light-text: #e8eaed;
+  --section-services: #f4f1e9;
+  --nav-pill-radius: 3.125rem;
+  --radius-card: 1rem;
+  --radius-card-lg: 1.25rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-light-text: var(--brand-light-text);
+  --color-section-services: var(--section-services);
+  --radius-default: var(--radius);
+  --radius-nav-pill: var(--nav-pill-radius);
+  --radius-card: var(--radius-card);
+  --radius-card-lg: var(--radius-card-lg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-inter: var(--font-inter);
+  --font-jakarta: var(--font-jakarta);
+  --font-outfit: var(--font-outfit);
+  --font-anton: var(--font-anton);
+  --font-instrument: var(--font-instrument);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+  will-change: transform;
+}
+
+@media (min-width: 640px) {
+  .animate-marquee {
+    animation-duration: 48s;
+  }
+}
+
+@media (min-width: 1024px) {
+  .animate-marquee {
+    animation-duration: 55s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+    will-change: auto;
+  }
+}
