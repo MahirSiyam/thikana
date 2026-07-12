@@ -4,5 +4,13 @@ export const routes = {
   homeDetails: "/home-details",
   services: "/services",
   serviceProviderDetails: (slug: string) => `/services/${slug}`,
+  about: "/about",
+  contactUs: "/contact-us",
+  faq: "/faq",
   signIn: "/signin",
+  signUpTenant: "/signup/tenant",
+  signUpTenantForm: "/signup/tenant/tenant-form",
+  signUpTenantVerifyOtp: "/signup/tenant/verify-otp",
+  signUpTenantVerifyIdentity: "/signup/tenant/verify-identity",
+  signUpTenantDetails: "/signup/tenant/tenant-details",
 } as const;

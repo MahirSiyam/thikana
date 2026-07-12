@@ -23,37 +23,22 @@ function SignInWordmark({ className = "" }: { className?: string }) {
 
 export function SignInPage() {
   return (
-    <div className="relative min-h-dvh bg-surface lg:grid lg:min-h-[760px] lg:grid-cols-[minmax(0,774fr)_minmax(0,666fr)]">
-      <aside className="relative hidden overflow-hidden lg:block">
-        <Image
-          src="/images/signin/signin-hero-illustration.png"
-          alt="Thikana homes and local service providers"
-          fill
-          priority
-          className="object-cover object-center"
-          sizes="(min-width: 1024px) 54vw, 0px"
-        />
+    <div className="relative flex min-h-dvh flex-col bg-surface">
+      <div className="px-4 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pt-4">
         <Link
           href={routes.home}
-          className="absolute left-[35px] top-6 z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-        >
-          <SignInWordmark className="text-[40px]" />
-        </Link>
-      </aside>
-
-      <section className="relative flex flex-col px-4 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-6">
-        <Link
-          href={routes.home}
-          className="mb-8 inline-flex w-fit lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          className="inline-flex w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
         >
           <SignInWordmark className="text-[32px] sm:text-[40px]" />
         </Link>
+      </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-8 lg:gap-10">
+      <section className="relative flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="flex w-full max-w-md flex-col items-center justify-center gap-5 sm:gap-6">
           <SignInForm />
 
-          <div className="flex flex-col items-center gap-5">
-            <ul className="flex items-center gap-8">
+          <div className="flex flex-col items-center gap-3">
+            <ul className="flex items-center gap-6">
               {socialLinks.map((item) => (
                 <li key={item.label}>
                   <button
