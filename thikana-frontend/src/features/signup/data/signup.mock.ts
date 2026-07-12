@@ -94,8 +94,6 @@ export const ownerDetailsCopy = {
   proofTitle: "Drag & drop or click to upload",
   proofHint: "Deed, Utility Bill, or Power of Attorney accepted",
   contactLabel: "Preferred Contact Method",
-  photoLabel: "Profile Photo (optional)",
-  photoHint: "A profile photo increases your chance of booking acceptance by 3×.",
   backLabel: "← Back",
   submitLabel: "Create My Account →",
   alreadyHaveAccount: "Already have an account?",
@@ -121,8 +119,6 @@ export const serviceProviderDetailsCopy = {
   certificateLabel: "Trade Certificate (optional)",
   certificateTitle: "Upload certificate",
   certificateHint: "Adds a Certified ✓ badge to your profile",
-  photoLabel: "Profile Photo (optional)",
-  photoHint: "A profile photo increases your chance of booking acceptance by 3×.",
   bioLabel: "Short Bio",
   bioPlaceholder:
     "Tell customers about your experience and what makes your service reliable.",
