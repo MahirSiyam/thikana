@@ -24,7 +24,7 @@ function SignInWordmark({ className = "" }: { className?: string }) {
 export function SignInPage() {
   return (
     <div className="relative flex min-h-dvh flex-col bg-surface">
-      <div className="px-4 pt-6 sm:px-8 sm:pt-8 lg:px-10 lg:pt-6">
+      <div className="px-4 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pt-4">
         <Link
           href={routes.home}
           className="inline-flex w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
@@ -33,12 +33,12 @@ export function SignInPage() {
         </Link>
       </div>
 
-      <section className="relative flex flex-1 flex-col items-center justify-center px-4 py-10 sm:px-8 sm:py-12 lg:px-10">
-        <div className="flex w-full max-w-md flex-col items-center justify-center gap-8 lg:gap-10">
+      <section className="relative flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <div className="flex w-full max-w-md flex-col items-center justify-center gap-5 sm:gap-6">
           <SignInForm />
 
-          <div className="flex flex-col items-center gap-5">
-            <ul className="flex items-center gap-8">
+          <div className="flex flex-col items-center gap-3">
+            <ul className="flex items-center gap-6">
               {socialLinks.map((item) => (
                 <li key={item.label}>
                   <button
