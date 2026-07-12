@@ -6,5 +6,6 @@ export const routes = {
   serviceProviderDetails: (slug: string) => `/services/${slug}`,
   about: "/about",
   contactUs: "/contact-us",
+  faq: "/faq",
   signIn: "/signin",
 } as const;
