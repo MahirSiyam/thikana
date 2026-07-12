@@ -20,7 +20,7 @@ export type HeaderAuthItem = {
 export const headerNavigation: HeaderNavItem[] = [
   { label: "Home", href: routes.home, variant: "link" },
   { label: "Browse Houses", href: routes.browseHome, variant: "link" },
-  { label: "Services", variant: "dropdown" },
+  { label: "Services", href: routes.services, variant: "link" },
   { label: "About", variant: "action" },
   { label: "Contact Us", variant: "action" },
 ];
@@ -33,4 +33,5 @@ export const headerAuthActions: HeaderAuthItem[] = [
 export const footerNavigation: NavItem[] = [
   { label: "Home", href: routes.home },
   { label: "Browse Houses", href: routes.browseHome },
+  { label: "Services", href: routes.services },
 ];
