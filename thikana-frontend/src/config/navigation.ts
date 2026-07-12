@@ -28,7 +28,7 @@ export const headerNavigation: HeaderNavItem[] = [
 
 export const headerAuthActions: HeaderAuthItem[] = [
   { label: "Sign In", href: routes.signIn, variant: "text" },
-  { label: "Sign Up", variant: "primary" },
+  { label: "Sign Up", href: routes.signUpTenant, variant: "primary" },
 ];
 
 export const footerNavigation: NavItem[] = [
