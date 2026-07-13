@@ -23,4 +23,6 @@ export const routes = {
   signUpServiceProviderVerifyNumber: "/signup/service-provider/verify-number",
   signUpServiceProviderVerifyIdentity: "/signup/service-provider/verify-identity",
   signUpServiceProviderDetails: "/signup/service-provider/service-provider-details",
+  adminOverview: "/admin/overview",
+  adminUserManagement: "/admin/user-management",
 } as const;
