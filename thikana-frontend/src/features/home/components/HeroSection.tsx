@@ -95,7 +95,8 @@ export function HeroSection() {
               style={{ aspectRatio: HERO_IMAGE_ASPECT }}
             >
               <div className="absolute inset-0">
-                <div className="absolute bottom-[15%] left-[2%] flex w-[clamp(7.25rem,28cqw,12.5rem)] flex-col gap-2 sm:bottom-[17%] sm:left-[3.5%] sm:gap-2.5 md:bottom-[19%] md:left-[5%] md:gap-3.5 lg:bottom-auto lg:left-[7%] lg:top-[52%] lg:w-[clamp(9rem,18cqw,12.5rem)] lg:gap-5 xl:left-[8%] xl:gap-6">
+                {/* Raised on sm/md so cards clear the overlapping dark CTA */}
+                <div className="absolute bottom-[30%] left-[2%] flex w-[clamp(7.25rem,28cqw,12.5rem)] flex-col gap-2 sm:bottom-[28%] sm:left-[3.5%] sm:gap-2.5 md:bottom-[26%] md:left-[5%] md:gap-3.5 lg:bottom-auto lg:left-[7%] lg:top-[52%] lg:w-[clamp(9rem,18cqw,12.5rem)] lg:gap-5 xl:left-[8%] xl:gap-6">
                   {heroStatsLeft.map((stat) => (
                     <div key={stat.label} className="pointer-events-auto w-full">
                       <HeroStatCard value={stat.value} label={stat.label} />
@@ -103,7 +104,8 @@ export function HeroSection() {
                   ))}
                 </div>
 
-                <div className="absolute left-[52%] top-[15%] flex w-[clamp(7.25rem,28cqw,12.5rem)] flex-col gap-2 sm:left-[57%] sm:top-[17%] sm:gap-2.5 md:left-[63%] md:top-[19%] md:gap-3.5 lg:left-[69%] lg:w-[clamp(9rem,18cqw,12.5rem)] lg:gap-5 xl:left-[71%] xl:gap-6">
+                {/* Anchored to the right edge on sm/md */}
+                <div className="absolute right-[2%] top-[12%] flex w-[clamp(7.25rem,28cqw,12.5rem)] flex-col gap-2 sm:right-[3.5%] sm:top-[14%] sm:gap-2.5 md:right-[5%] md:top-[16%] md:gap-3.5 lg:left-[69%] lg:right-auto lg:top-[15%] lg:w-[clamp(9rem,18cqw,12.5rem)] lg:gap-5 xl:left-[71%] xl:gap-6">
                   {heroStatsRight.map((stat) => (
                     <div key={stat.label} className="pointer-events-auto w-full">
                       <HeroStatCard value={stat.value} label={stat.label} />
@@ -126,7 +128,7 @@ export function HeroSection() {
             <h1 className="font-anton text-[clamp(1.5rem,5.5vw,5rem)] leading-[1.1] text-white">
               Find a Verified Home.
             </h1>
-            <p className="mt-2 font-inter text-[clamp(1.125rem,4.2vw,3.75rem)] leading-[1.1] text-white sm:mt-3 sm:pl-[12%] md:pl-[20%] lg:pl-[31%]">
+            <p className="mt-2 pl-[31%] font-inter text-[clamp(1.125rem,4.2vw,3.75rem)] leading-[1.1] text-white sm:mt-3">
               Book Trusted Services.
             </p>
           </div>

@@ -8,7 +8,7 @@ export function ServicesFiltersSidebar() {
   const [verifiedOnly, setVerifiedOnly] = useState(true);
 
   return (
-    <aside className="flex w-full flex-col gap-6 rounded-[20px] bg-white px-4 py-5 lg:w-[302px] lg:shrink-0">
+    <aside className="flex w-full flex-col gap-6 rounded-[20px] bg-white px-4 py-5 lg:sticky lg:top-28 lg:w-[302px] lg:shrink-0">
       <div className="flex w-full flex-col gap-4">
         <div className="flex items-center justify-between">
           <p className="font-inter text-base font-bold uppercase text-brand-dark">Filters</p>

@@ -31,7 +31,7 @@ export function BrowseFiltersSidebar() {
   const [verifiedOnly, setVerifiedOnly] = useState(true);
 
   return (
-    <aside className="flex w-full flex-col gap-6 rounded-[10px] border border-[#e5e5e2] bg-white p-5 lg:w-[295px] lg:shrink-0">
+    <aside className="flex w-full flex-col gap-6 rounded-[10px] border border-[#e5e5e2] bg-white p-5 lg:sticky lg:top-28 lg:w-[295px] lg:shrink-0">
       <p className="font-inter text-lg font-bold text-brand-dark">Filters</p>
 
       <FilterSelect label="Location" value="Dhaka" />
