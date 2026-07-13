@@ -30,16 +30,19 @@ export const adminNavItems: AdminNavItem[] = [
     id: "reports",
     label: "Reports & Analytics",
     iconSrc: "/images/admin/icon-bar-chart.svg",
+    href: routes.adminReportsAnalytics,
   },
   {
     id: "support",
     label: "Support / Messages",
     iconSrc: "/images/admin/icon-message-circle.svg",
+    href: routes.adminSupport,
   },
   {
     id: "settings",
     label: "Site Settings",
     iconSrc: "/images/admin/icon-settings.svg",
+    href: routes.adminSiteSettings,
   },
 ];
 
