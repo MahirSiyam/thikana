@@ -18,6 +18,7 @@ export const adminNavItems: AdminNavItem[] = [
     id: "listing-verification",
     label: "Listing Verification",
     iconSrc: "/images/admin/icon-file-check.svg",
+    href: routes.adminListingVerification,
   },
   {
     id: "provider-verification",
