@@ -70,17 +70,6 @@ export function FaqHeroAndList() {
                 aria-hidden="true"
                 className="shrink-0"
               />
-              <Link href={routes.contactUs} className="transition-opacity hover:opacity-70">
-                Contact Us
-              </Link>
-              <Image
-                src="/images/browse-home/icon-breadcrumb-chevron.svg"
-                alt=""
-                width={15}
-                height={15}
-                aria-hidden="true"
-                className="shrink-0"
-              />
               <span className="underline">FAQs</span>
             </nav>
 
