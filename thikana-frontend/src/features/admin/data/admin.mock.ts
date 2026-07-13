@@ -36,11 +36,13 @@ export const adminNavItems: AdminNavItem[] = [
     id: "support",
     label: "Support / Messages",
     iconSrc: "/images/admin/icon-message-circle.svg",
+    href: routes.adminSupport,
   },
   {
     id: "settings",
     label: "Site Settings",
     iconSrc: "/images/admin/icon-settings.svg",
+    href: routes.adminSiteSettings,
   },
 ];
 

@@ -28,4 +28,6 @@ export const routes = {
   adminListingVerification: "/admin/listing-verification",
   adminProviderVerification: "/admin/provider-verification",
   adminReportsAnalytics: "/admin/reports-&-analytics",
+  adminSupport: "/admin/support",
+  adminSiteSettings: "/admin/site-settings",
 } as const;
