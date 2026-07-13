@@ -26,4 +26,5 @@ export const routes = {
   adminOverview: "/admin/overview",
   adminUserManagement: "/admin/user-management",
   adminListingVerification: "/admin/listing-verification",
+  adminProviderVerification: "/admin/provider-verification",
 } as const;

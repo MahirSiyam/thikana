@@ -24,6 +24,7 @@ export const adminNavItems: AdminNavItem[] = [
     id: "provider-verification",
     label: "Provider Verification",
     iconSrc: "/images/admin/icon-truck.svg",
+    href: routes.adminProviderVerification,
   },
   {
     id: "reports",
