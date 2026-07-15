@@ -43,4 +43,11 @@ export const routes = {
   ownerEarnings: "/owner/earnings",
   ownerMessages: "/owner/messages",
   ownerProfile: "/owner/profile",
+  serviceProviderOverview: "/service-provider/overview",
+  serviceProviderJobRequests: "/service-provider/job-requests",
+  serviceProviderMySchedule: "/service-provider/my-schedule",
+  serviceProviderServiceProfile: "/service-provider/service-profile",
+  serviceProviderEarnings: "/service-provider/earnings",
+  serviceProviderMessages: "/service-provider/messages",
+  serviceProviderReviews: "/service-provider/reviews",
 } as const;
