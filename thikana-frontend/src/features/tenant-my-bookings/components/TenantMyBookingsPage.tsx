@@ -1,0 +1,251 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { routes } from "@/config/routes";
+import { tenantUser } from "@/features/tenant/data/tenant.mock";
+import {
+  myBookings,
+  myBookingsTabs,
+} from "@/features/tenant-my-bookings/data/tenant-my-bookings.mock";
+import type {
+  MyBooking,
+  MyBookingStatus,
+  MyBookingsTabId,
+} from "@/features/tenant-my-bookings/types/tenant-my-bookings.types";
+
+const statusStyles: Record<
+  MyBookingStatus,
+  { badge: string; border: string }
+> = {
+  Approved: {
+    badge: "bg-[#dcfce7] text-[#16a34a]",
+    border: "border-l-[#16a34a]",
+  },
+  Pending: {
+    badge: "bg-[#fef3c7] text-[#f59e0b]",
+    border: "border-l-[#f48b19]",
+  },
+  Declined: {
+    badge: "bg-[#fee2e2] text-[#dc2626]",
+    border: "border-l-[#dc2626]",
+  },
+  "Under Review": {
+    badge: "bg-[#eff6ff] text-[#3b82f6]",
+    border: "border-l-[#3b82f6]",
+  },
+};
+
+function matchesTab(booking: MyBooking, tab: MyBookingsTabId): boolean {
+  if (tab === "all") return true;
+  if (tab === "pending") return booking.status === "Pending";
+  if (tab === "approved") return booking.status === "Approved";
+  return booking.status === "Declined";
+}
+
+function BookingCard({ booking }: { booking: MyBooking }) {
+  const styles = statusStyles[booking.status];
+
+  return (
+    <article
+      className={`flex flex-col gap-4 rounded-lg border-l-[5px] bg-white p-4 shadow-[0px_4px_10px_rgba(10,10,10,0.05)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 ${styles.border}`}
+    >
+      <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center sm:gap-4">
+        <div className="relative size-16 shrink-0 overflow-hidden rounded-[10px]">
+          <Image
+            src={booking.imageSrc}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="64px"
+          />
+        </div>
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 className="font-inter text-[15px] font-bold text-brand-dark">
+            {booking.title}
+          </h2>
+          <p className="font-inter text-[13px] text-[#6b7280]">{booking.address}</p>
+          <p className="font-inter text-xs text-[#6b7280]">{booking.requestedAt}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 sm:gap-6 lg:gap-10">
+        <span
+          className={`inline-flex rounded px-2.5 py-1 font-inter text-[11px] font-semibold ${styles.badge}`}
+        >
+          {booking.status}
+        </span>
+
+        <div className="flex items-center gap-2">
+          <div className="relative size-10 shrink-0 overflow-hidden rounded-[20px]">
+            <Image
+              src={booking.ownerAvatarSrc}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="40px"
+            />
+          </div>
+          <p className="font-inter text-xs font-medium text-black">{booking.ownerName}</p>
+        </div>
+
+        <div className="flex w-full items-center justify-end gap-4 sm:w-auto">
+          {booking.canCancel ? (
+            <button
+              type="button"
+              className="font-inter text-xs font-semibold text-[#dc2626] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626] focus-visible:ring-offset-2"
+            >
+              Cancel
+            </button>
+          ) : null}
+          <Link
+            href={routes.homeDetails}
+            className="inline-flex items-center rounded-md border border-brand-dark px-4 py-2 font-inter text-xs font-bold text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          >
+            View Details
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function DeclinedEmptyState() {
+  return (
+    <div className="mx-auto flex w-full max-w-[400px] flex-col items-center gap-5 rounded-2xl border border-dashed border-brand-dark/50 p-10">
+      <div className="flex size-10 items-center justify-center rounded-[20px] bg-[#f5f5f3]">
+        <Image
+          src="/images/tenant/icon-x-circle.svg"
+          alt=""
+          width={20}
+          height={20}
+          aria-hidden="true"
+          className="size-5"
+        />
+      </div>
+      <p className="font-inter text-[15px] text-brand-dark">No declined bookings</p>
+      <Link
+        href={routes.browseHome}
+        className="inline-flex items-center rounded-md bg-brand-dark px-5 py-2.5 font-inter text-[13px] font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+      >
+        Browse Houses
+      </Link>
+    </div>
+  );
+}
+
+export function TenantMyBookingsPage() {
+  const [activeTab, setActiveTab] = useState<MyBookingsTabId>("all");
+
+  const visibleBookings = useMemo(
+    () => myBookings.filter((booking) => matchesTab(booking, activeTab)),
+    [activeTab],
+  );
+
+  return (
+    <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-[50px] lg:py-[30px]">
+      <div className="flex w-full flex-col gap-6">
+        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <h1 className="font-inter text-xl font-bold text-brand-dark">My Bookings</h1>
+
+          <div className="flex h-10 w-full max-w-[360px] items-center gap-2 rounded-[20px] bg-[#f5f5f3] px-4">
+            <Image
+              src="/images/tenant/icon-search.svg"
+              alt=""
+              width={16}
+              height={16}
+              aria-hidden="true"
+              className="size-4 shrink-0"
+            />
+            <label className="sr-only" htmlFor="tenant-bookings-search">
+              Search houses, services
+            </label>
+            <input
+              id="tenant-bookings-search"
+              type="search"
+              placeholder="Search houses, services..."
+              className="min-w-0 flex-1 bg-transparent font-inter text-[13px] text-brand-dark outline-none placeholder:text-[#6b7280]"
+            />
+          </div>
+
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+            >
+              <Image
+                src="/images/tenant/icon-bell.svg"
+                alt=""
+                width={24}
+                height={24}
+                aria-hidden="true"
+                className="size-6"
+              />
+            </button>
+            <button
+              type="button"
+              aria-label="Settings"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+            >
+              <Image
+                src="/images/tenant/icon-settings.svg"
+                alt=""
+                width={20}
+                height={20}
+                aria-hidden="true"
+                className="size-5"
+              />
+            </button>
+            <div className="relative size-8 overflow-hidden rounded-2xl">
+              <Image
+                src={tenantUser.topbarAvatarSrc}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="32px"
+              />
+            </div>
+          </div>
+        </header>
+
+        <div
+          role="tablist"
+          aria-label="Booking status filters"
+          className="flex gap-3 overflow-x-auto pb-1"
+        >
+          {myBookingsTabs.map((tab) => {
+            const isActive = tab.id === activeTab;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.id)}
+                className={`inline-flex h-9 shrink-0 items-center rounded-lg px-4 font-inter text-[13px] transition-colors ${
+                  isActive
+                    ? "bg-brand-dark font-semibold text-white"
+                    : "border border-[#e5e5e2] font-normal text-[#6b7280]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {visibleBookings.length > 0 ? (
+          <div className="flex flex-col gap-4">
+            {visibleBookings.map((booking) => (
+              <BookingCard key={booking.id} booking={booking} />
+            ))}
+          </div>
+        ) : activeTab === "declined" ? (
+          <DeclinedEmptyState />
+        ) : null}
+      </div>
+    </div>
+  );
+}

@@ -30,4 +30,10 @@ export const routes = {
   adminReportsAnalytics: "/admin/reports-&-analytics",
   adminSupport: "/admin/support",
   adminSiteSettings: "/admin/site-settings",
+  tenantOverview: "/tenant/overview",
+  tenantMyBookings: "/tenant/my-bookings",
+  tenantSavedHomes: "/tenant/saved-homes",
+  tenantServiceRequests: "/tenant/service-requests",
+  tenantMessages: "/tenant/messages",
+  tenantProfile: "/tenant/profile",
 } as const;
