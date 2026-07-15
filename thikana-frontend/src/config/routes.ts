@@ -36,4 +36,11 @@ export const routes = {
   tenantServiceRequests: "/tenant/service-requests",
   tenantMessages: "/tenant/messages",
   tenantProfile: "/tenant/profile",
+  ownerOverview: "/owner/overview",
+  ownerMyListings: "/owner/my-listings",
+  ownerAddNewListing: "/owner/add-new-listing",
+  ownerBookingRequests: "/owner/booking-requests",
+  ownerEarnings: "/owner/earnings",
+  ownerMessages: "/owner/messages",
+  ownerProfile: "/owner/profile",
 } as const;
