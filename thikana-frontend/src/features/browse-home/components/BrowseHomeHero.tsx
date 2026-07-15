@@ -42,17 +42,16 @@ export function BrowseHomeHero() {
             </h1>
           </div>
 
-          <div className="relative overflow-hidden rounded-2xl">
+          <div className="relative h-[200px] overflow-hidden rounded-2xl sm:h-[280px] lg:h-[370px]">
             <Image
               src="/images/browse-home/hero-dhaka-cityscape.png"
               alt="Dhaka city skyline"
-              width={2480}
-              height={930}
+              fill
               priority
-              className="h-auto w-full object-cover object-center max-lg:aspect-[16/9] max-lg:max-h-[320px] lg:max-h-none lg:aspect-auto"
+              className="object-cover object-center"
               sizes="(max-width: 1023px) 100vw, 1240px"
             />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-black/35 to-transparent px-4 pb-5 pt-16 sm:px-8 sm:pb-7 lg:px-[10%] lg:pb-8">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-4 pb-5 sm:px-8 sm:pb-7 lg:px-[12%] lg:pb-[29px]">
               <div className="pointer-events-auto w-full rounded-2xl bg-[rgba(10,10,10,0.5)] px-4 py-2.5 text-center sm:px-5">
                 <p className="font-jakarta text-[clamp(1rem,3.5vw,2.5rem)] font-bold leading-[1.4] text-white sm:leading-[1.6]">
                   Find A Verified Home Settle In With Confidence
