@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+ import type { Metadata } from "next";
 import { SignupTenantVerifyOtpPage } from "@/features/signup/components/SignupTenantVerifyOtpPage";
 
 export const metadata: Metadata = {
