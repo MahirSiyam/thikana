@@ -1,12 +1,32 @@
 {
   "name": "thikana-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Thikana backend API — Firebase email OTP verification service",
+  "main": "dist/server.js",
   "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^8.6.0",
+    "firebase-admin": "^14.2.0",
+    "mongoose": "^9.7.4",
+    "nodemailer": "^9.0.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@types/nodemailer": "^8.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
 }

@@ -2,11 +2,54 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
+import { auth } from "@/lib/firebase/firebase";
+
+function firebaseSigninErrorMessage(error: unknown): string {
+  const code = (error as { code?: string })?.code;
+  switch (code) {
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Incorrect email or password.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Please wait a moment and try again.";
+    default:
+      return "Could not sign in. Please try again.";
+  }
+}
 
 export function SignInForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      await credential.user.reload();
+
+      if (!credential.user.emailVerified) {
+        router.push(`${routes.verifyEmail}?next=${encodeURIComponent(routes.home)}`);
+        return;
+      }
+
+      router.push(routes.home);
+    } catch (err) {
+      setError(firebaseSigninErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-[466px] rounded-xl bg-white px-4 py-4 shadow-[4px_4px_5px_rgba(10,10,10,0.1)] sm:px-6 sm:py-5">
@@ -17,12 +60,7 @@ export function SignInForm() {
         <p className="font-inter text-sm text-brand-dark">Sign in to your Thikana account</p>
       </header>
 
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-        }}
-      >
+      <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="signin-email" className="font-inter text-base font-medium text-brand-dark">
             Email or Phone
@@ -41,6 +79,9 @@ export function SignInForm() {
               name="emailOrPhone"
               type="text"
               autoComplete="username"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="Enter email or phone number"
               className="min-w-0 flex-1 bg-transparent font-inter text-sm text-brand-dark placeholder:text-brand-dark/60 focus:outline-none"
             />
@@ -65,6 +106,9 @@ export function SignInForm() {
               name="password"
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter password"
               className="min-w-0 flex-1 bg-transparent font-inter text-sm text-brand-dark placeholder:text-brand-dark/60 focus:outline-none"
             />
@@ -93,12 +137,19 @@ export function SignInForm() {
           </div>
         </div>
 
+        {error && (
+          <p role="alert" className="font-inter text-sm font-medium text-red-600">
+            {error}
+          </p>
+        )}
+
         <div className="flex flex-col gap-2">
           <button
             type="submit"
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-dark font-inter text-base font-bold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+            disabled={isSubmitting}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-dark font-inter text-base font-bold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Login
+            {isSubmitting ? "Signing in..." : "Login"}
             <Image
               src="/images/signin/icon-arrow-right.svg"
               alt=""

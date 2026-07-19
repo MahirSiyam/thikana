@@ -8,6 +8,7 @@ export const routes = {
   contactUs: "/contact-us",
   faq: "/faq",
   signIn: "/signin",
+  verifyEmail: "/verify-email",
   signUpTenant: "/signup/tenant",
   signUpTenantForm: "/signup/tenant/tenant-form",
   signUpTenantVerifyOtp: "/signup/tenant/verify-number",

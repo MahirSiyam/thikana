@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { useId, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import {
@@ -10,6 +11,8 @@ import {
   tenantBasicInfoCopy,
 } from "@/features/signup/data/signup.mock";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
+import { auth } from "@/lib/firebase/firebase";
+import { sendEmailOtp } from "@/lib/api/emailVerification";
 
 const fieldClassName =
   "h-[52px] w-full rounded-[10px] border border-[#e5e5e2] bg-white px-4 font-inter text-[15px] text-brand-dark outline-none placeholder:text-brand-dark/50 focus-visible:ring-2 focus-visible:ring-brand-dark/20";
@@ -18,6 +21,20 @@ type TenantBasicInfoFormProps = {
   backHref?: string;
   nextHref?: string | null;
 };
+
+function firebaseSignupErrorMessage(error: unknown): string {
+  const code = (error as { code?: string })?.code;
+  switch (code) {
+    case "auth/email-already-in-use":
+      return "An account already exists with this email. Try signing in instead.";
+    case "auth/invalid-email":
+      return "Enter a valid email address.";
+    case "auth/weak-password":
+      return "Password should be at least 6 characters.";
+    default:
+      return "Could not create your account. Please try again.";
+  }
+}
 
 export function TenantBasicInfoForm({
   backHref = routes.signUpTenant,
@@ -33,11 +50,52 @@ export function TenantBasicInfoForm({
   const [division, setDivision] = useState("");
   const [district, setDistrict] = useState("");
   const [area, setArea] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (nextHref) {
-      router.push(nextHref);
+    setError(null);
+
+    if (!email.trim()) {
+      setError("Email address is required to verify your account.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      if (fullName.trim()) {
+        await updateProfile(credential.user, { displayName: fullName.trim() });
+      }
+
+      // Firebase account created — now trigger the email OTP send on our backend.
+      await sendEmailOtp();
+
+      const verifyEmailTarget = `${routes.verifyEmail}?next=${encodeURIComponent(
+        nextHref ?? routes.signUpTenantVerifyOtp
+      )}`;
+      router.push(verifyEmailTarget);
+    }
+    catch (err: unknown) {
+      console.log("FULL ERROR:", err);
+
+      // Narrow unknown to extract common fields safely
+      const errorCode = typeof err === "object" && err !== null && "code" in err ? (err as { code?: unknown }).code : undefined;
+      const errorMessage = err instanceof Error ? err.message : typeof err === "object" && err !== null && "message" in err ? String((err as { message?: unknown }).message) : undefined;
+
+      console.log("ERROR CODE:", errorCode);
+      console.log("ERROR MESSAGE:", errorMessage);
+
+      // firebaseSignupErrorMessage expects a value it can handle; cast only here.
+      setError(firebaseSignupErrorMessage(err as any));
+    }
+    finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -120,17 +178,21 @@ export function TenantBasicInfoForm({
                   htmlFor={`${formId}-email`}
                   className="font-inter text-[13px] font-semibold text-[#161616]"
                 >
-                  Email Address (optional)
+                  Email Address
                 </label>
                 <input
                   id={`${formId}-email`}
                   type="email"
                   autoComplete="email"
+                  required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="you@example.com"
                   className={fieldClassName}
                 />
+                <p className="font-inter text-xs text-brand-dark/50">
+                  We&apos;ll send a 6-digit code here to verify your account
+                </p>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -239,12 +301,19 @@ export function TenantBasicInfoForm({
               </div>
             </div>
 
+            {error && (
+              <p role="alert" className="font-inter text-sm font-medium text-red-600">
+                {error}
+              </p>
+            )}
+
             <div className="flex flex-col items-center gap-3">
               <button
                 type="submit"
-                className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+                disabled={isSubmitting}
+                className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {tenantBasicInfoCopy.continueLabel}
+                {isSubmitting ? "Creating account..." : tenantBasicInfoCopy.continueLabel}
               </button>
             </div>
           </div>
