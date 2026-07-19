@@ -9,6 +9,7 @@ import {
   Outfit,
 } from "next/font/google";
 import { siteDescription, siteName } from "@/config/site";
+import { SiteLoaderProvider } from "@/components/loading/site-loader-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -65,7 +66,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${plusJakartaSans.variable} ${outfit.variable} ${anton.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SiteLoaderProvider>{children}</SiteLoaderProvider>
+      </body>
     </html>
   );
 }
