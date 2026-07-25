@@ -14,6 +14,9 @@ export type ListingDto = {
   ownerName?: string | null;
   ownerEmail?: string | null;
   ownerPhone?: string | null;
+  ownerAvatarUrl?: string | null;
+  ownerMemberSince?: string | Date | null;
+  ownerVerified?: boolean;
   title: string;
   slug: string;
   propertyType: string;
@@ -33,6 +36,15 @@ export type ListingDto = {
   availableFrom?: string | null;
   whoCanRent: string[];
   amenities: string[];
+  locationMapUrl?: string | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  reviewChecklist?: Array<{
+    id: string;
+    label: string;
+    status: "pending" | "ok" | "issue";
+    note?: string;
+  }>;
   images: Array<CloudinaryAsset & { secureUrl?: string }>;
   coverImageUrl?: string | null;
   status: ListingStatus;
@@ -65,6 +77,7 @@ export type ListingUpsertPayload = {
   availableFrom?: string | null;
   whoCanRent: Array<"Family" | "Bachelor" | "Any">;
   amenities?: string[];
+  locationMapUrl?: string;
   images?: CloudinaryAsset[];
   coverImageUrl?: string;
   submitForReview?: boolean;
@@ -80,7 +93,7 @@ export type ListingListParams = {
   whoCanRent?: string;
   minPrice?: number;
   maxPrice?: number;
-  sortBy?: "createdAt" | "monthlyRent" | "views";
+  sortBy?: "createdAt" | "monthlyRent" | "views" | "approvedAt";
   sortOrder?: "asc" | "desc";
   reviewTab?: string;
 };
@@ -198,23 +211,45 @@ export const setAdminListingReviewStep = async (
   return response.data as ListingDto;
 };
 
-export const approveAdminListing = async (listingId: string, note?: string) => {
+export const approveAdminListing = async (
+  listingId: string,
+  payload: {
+    note?: string;
+    checklist: Array<{
+      id: string;
+      label: string;
+      status: "pending" | "ok" | "issue";
+      note?: string;
+    }>;
+  }
+) => {
   const response = await adminAuthorizedFetch<ListingDto>(
     `/api/admin/listings/${listingId}/approve`,
     {
       method: "PATCH",
-      body: JSON.stringify({ note }),
+      body: JSON.stringify(payload),
     }
   );
   return response.data as ListingDto;
 };
 
-export const rejectAdminListing = async (listingId: string, reason: string) => {
+export const rejectAdminListing = async (
+  listingId: string,
+  payload: {
+    reason?: string;
+    checklist: Array<{
+      id: string;
+      label: string;
+      status: "pending" | "ok" | "issue";
+      note?: string;
+    }>;
+  }
+) => {
   const response = await adminAuthorizedFetch<ListingDto>(
     `/api/admin/listings/${listingId}/reject`,
     {
       method: "PATCH",
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify(payload),
     }
   );
   return response.data as ListingDto;

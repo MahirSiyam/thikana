@@ -9,6 +9,41 @@ import type {
 } from "../validation/listing.validation";
 import { createAuditLog } from "./audit-log.service";
 import { getSignedAssetUrl, isCloudinaryConfigured } from "./cloudinary.service";
+import {
+  safeSendEmail,
+  sendListingApprovedEmail,
+  sendListingRejectedEmail,
+} from "./email.service";
+import { toSafeUser } from "./user.service";
+import { normalizeLocationMapUrl } from "../utils/map-link";
+import { LISTING_REVIEW_CHECKLIST_ITEMS } from "../constants/listing-review-checklist";
+import type { z } from "zod";
+import type { listingReviewChecklistSchema } from "../validation/listing.validation";
+
+type ReviewChecklist = z.infer<typeof listingReviewChecklistSchema>;
+
+const assertChecklistComplete = (checklist: ReviewChecklist) => {
+  const ids = new Set(checklist.map((item) => item.id));
+  for (const item of LISTING_REVIEW_CHECKLIST_ITEMS) {
+    if (!ids.has(item.id)) {
+      throw new ListingError(
+        `Checklist item missing: ${item.label}`,
+        "CHECKLIST_INCOMPLETE",
+        400
+      );
+    }
+  }
+  if (checklist.some((item) => item.status === "pending")) {
+    throw new ListingError(
+      "Mark every checklist item as OK or Issue before continuing",
+      "CHECKLIST_INCOMPLETE",
+      400
+    );
+  }
+};
+
+const ownerListingsUrl = () =>
+  `${(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "")}/owner/my-listings`;
 
 export class ListingError extends Error {
   code: string;
@@ -65,6 +100,9 @@ export const toListingDto = (
     ownerName?: string | null;
     ownerEmail?: string | null;
     ownerPhone?: string | null;
+    ownerAvatarUrl?: string | null;
+    ownerMemberSince?: string | Date | null;
+    ownerVerified?: boolean;
   }
 ) => {
   const rawImages = (listing.images || []).map((image) => {
@@ -101,6 +139,9 @@ export const toListingDto = (
     ownerName: extras?.ownerName ?? null,
     ownerEmail: extras?.ownerEmail ?? null,
     ownerPhone: extras?.ownerPhone ?? null,
+    ownerAvatarUrl: extras?.ownerAvatarUrl ?? null,
+    ownerMemberSince: extras?.ownerMemberSince ?? null,
+    ownerVerified: extras?.ownerVerified ?? false,
     title: listing.title,
     slug: listing.slug,
     propertyType: listing.propertyType,
@@ -115,6 +156,15 @@ export const toListingDto = (
     availableFrom: listing.availableFrom || null,
     whoCanRent: listing.whoCanRent || [],
     amenities: listing.amenities || [],
+    locationMapUrl: listing.locationMapUrl || "",
+    locationLat: listing.locationLat ?? null,
+    locationLng: listing.locationLng ?? null,
+    reviewChecklist: (listing.reviewChecklist || []).map((item) => ({
+      id: item.id,
+      label: item.label,
+      status: item.status,
+      note: item.note || undefined,
+    })),
     images: rawImages,
     coverImageUrl:
       listing.coverImageUrl ||
@@ -141,6 +191,10 @@ export const createListing = async (input: {
     ? "under_review"
     : "draft";
 
+  const normalizedMap = await normalizeLocationMapUrl(
+    input.payload.locationMapUrl
+  );
+
   const listing = await Listing.create({
     ownerId: input.ownerId,
     title: input.payload.title,
@@ -157,6 +211,9 @@ export const createListing = async (input: {
     availableFrom: input.payload.availableFrom || undefined,
     whoCanRent: input.payload.whoCanRent,
     amenities: input.payload.amenities || [],
+    locationMapUrl: normalizedMap?.locationMapUrl,
+    locationLat: normalizedMap?.lat,
+    locationLng: normalizedMap?.lng,
     images: input.payload.images || [],
     coverImageUrl: coverFromImages(
       input.payload.images,
@@ -200,6 +257,12 @@ export const updateOwnerListing = async (input: {
   listing.availableFrom = input.payload.availableFrom || undefined;
   listing.whoCanRent = input.payload.whoCanRent;
   if (input.payload.amenities) listing.amenities = input.payload.amenities;
+  const normalizedMap = await normalizeLocationMapUrl(
+    input.payload.locationMapUrl
+  );
+  listing.locationMapUrl = normalizedMap?.locationMapUrl;
+  listing.locationLat = normalizedMap?.lat;
+  listing.locationLng = normalizedMap?.lng;
   if (input.payload.images) {
     listing.set("images", input.payload.images);
   }
@@ -387,11 +450,37 @@ export const getPublicListingBySlugOrId = async (slugOrId: string) => {
     throw new ListingError("Listing not found", "LISTING_NOT_FOUND", 404);
   }
 
+  // Backfill coords / expanded URL for older short map links.
+  if (
+    listing.locationMapUrl &&
+    (listing.locationLat == null || listing.locationLng == null)
+  ) {
+    try {
+      const normalized = await normalizeLocationMapUrl(listing.locationMapUrl);
+      if (normalized?.locationMapUrl) {
+        listing.locationMapUrl = normalized.locationMapUrl;
+      }
+      if (normalized?.lat != null && normalized?.lng != null) {
+        listing.locationLat = normalized.lat;
+        listing.locationLng = normalized.lng;
+      }
+    } catch {
+      // Keep original link if expand fails.
+    }
+  }
+
   listing.views = (listing.views || 0) + 1;
   await listing.save();
 
-  const owner = await User.findById(listing.ownerId).select("fullName");
-  return toListingDto(listing, { ownerName: owner?.fullName || null });
+  const owner = await User.findById(listing.ownerId);
+  const ownerSafe = owner ? toSafeUser(owner) : null;
+
+  return toListingDto(listing, {
+    ownerName: ownerSafe?.fullName || null,
+    ownerAvatarUrl: ownerSafe?.avatarUrl || null,
+    ownerMemberSince: ownerSafe?.createdAt || null,
+    ownerVerified: ownerSafe?.approvalStatus === "approved",
+  });
 };
 
 const reviewTabToFilter = (
@@ -420,9 +509,19 @@ const reviewTabToFilter = (
 };
 
 export const listAdminListings = async (query: AdminListingListQuery) => {
-  const filter: Record<string, unknown> = query.status
-    ? { status: query.status }
-    : reviewTabToFilter(query.reviewTab);
+  let filter: Record<string, unknown>;
+
+  if (query.status) {
+    filter = { status: query.status };
+  } else if (query.reviewTab) {
+    // Legacy stage filters — still only the under-review queue.
+    filter = reviewTabToFilter(query.reviewTab);
+  } else {
+    // Default admin verification page: keep pending + decided listings visible.
+    filter = {
+      status: { $in: ["under_review", "live", "rejected", "paused"] },
+    };
+  }
 
   if (query.search) {
     filter.$text = { $search: query.search };
@@ -474,9 +573,19 @@ export const approveListing = async (input: {
   adminRole: "admin";
   listingId: string;
   note?: string;
+  checklist: ReviewChecklist;
   ipAddress?: string;
   userAgent?: string;
 }) => {
+  assertChecklistComplete(input.checklist);
+  if (input.checklist.some((item) => item.status === "issue")) {
+    throw new ListingError(
+      "All checklist items must be marked OK before approving",
+      "CHECKLIST_HAS_ISSUES",
+      400
+    );
+  }
+
   const listing = await Listing.findById(input.listingId);
   if (!listing) {
     throw new ListingError("Listing not found", "LISTING_NOT_FOUND", 404);
@@ -494,7 +603,8 @@ export const approveListing = async (input: {
 
   const previous = listing.status;
   listing.status = "live";
-  listing.reviewStepIndex = 4;
+  listing.reviewStepIndex = 3;
+  listing.set("reviewChecklist", input.checklist);
   listing.approvedAt = new Date();
   listing.approvedBy = input.adminId as unknown as Types.ObjectId;
   listing.rejectionReason = undefined;
@@ -506,11 +616,32 @@ export const approveListing = async (input: {
     action: "LISTING_APPROVED",
     targetUserId: listing.ownerId,
     previousValue: { status: previous, listingId: String(listing._id) },
-    newValue: { status: "live", listingId: String(listing._id) },
+    newValue: {
+      status: "live",
+      listingId: String(listing._id),
+      checklist: input.checklist,
+    },
     note: input.note,
     ipAddress: input.ipAddress,
     userAgent: input.userAgent,
   });
+
+  const owner = await User.findById(listing.ownerId);
+  if (owner?.email) {
+    await safeSendEmail("listing-approved", () =>
+      sendListingApprovedEmail({
+        email: owner.email,
+        name: owner.fullName || "there",
+        listingTitle: listing.title,
+        dashboardUrl: ownerListingsUrl(),
+        checklist: input.checklist.map((item) => ({
+          label: item.label,
+          status: item.status,
+          note: item.note,
+        })),
+      })
+    );
+  }
 
   return toListingDto(listing);
 };
@@ -520,9 +651,20 @@ export const rejectListing = async (input: {
   adminRole: "admin";
   listingId: string;
   reason: string;
+  checklist: ReviewChecklist;
   ipAddress?: string;
   userAgent?: string;
 }) => {
+  assertChecklistComplete(input.checklist);
+  const issueItems = input.checklist.filter((item) => item.status === "issue");
+  if (!issueItems.length && input.reason.trim().length < 3) {
+    throw new ListingError(
+      "Mark at least one checklist issue or add a rejection reason",
+      "REJECT_REASON_REQUIRED",
+      400
+    );
+  }
+
   const listing = await Listing.findById(input.listingId);
   if (!listing) {
     throw new ListingError("Listing not found", "LISTING_NOT_FOUND", 404);
@@ -535,9 +677,19 @@ export const rejectListing = async (input: {
     );
   }
 
+  const autoReason =
+    issueItems.length > 0
+      ? `Issues: ${issueItems.map((item) => item.label).join(", ")}`
+      : "";
+  const reason =
+    input.reason.trim() ||
+    autoReason ||
+    "Listing did not pass verification checklist";
+
   const previous = listing.status;
   listing.status = "rejected";
-  listing.rejectionReason = input.reason;
+  listing.set("reviewChecklist", input.checklist);
+  listing.rejectionReason = reason;
   listing.rejectedAt = new Date();
   listing.rejectedBy = input.adminId as unknown as Types.ObjectId;
   await listing.save();
@@ -551,12 +703,31 @@ export const rejectListing = async (input: {
     newValue: {
       status: "rejected",
       listingId: String(listing._id),
-      reason: input.reason,
+      reason,
+      checklist: input.checklist,
     },
-    note: input.reason,
+    note: reason,
     ipAddress: input.ipAddress,
     userAgent: input.userAgent,
   });
+
+  const owner = await User.findById(listing.ownerId);
+  if (owner?.email) {
+    await safeSendEmail("listing-rejected", () =>
+      sendListingRejectedEmail({
+        email: owner.email,
+        name: owner.fullName || "there",
+        listingTitle: listing.title,
+        reason,
+        dashboardUrl: ownerListingsUrl(),
+        checklist: input.checklist.map((item) => ({
+          label: item.label,
+          status: item.status,
+          note: item.note,
+        })),
+      })
+    );
+  }
 
   return toListingDto(listing);
 };
@@ -574,7 +745,7 @@ export const advanceListingReviewStep = async (input: {
   }
   // Steps 0–3 are checklist progress; step 4 = ready to approve (still under_review).
   // Approve also sets step 4 when publishing.
-  listing.reviewStepIndex = Math.min(4, Math.max(0, input.stepIndex));
+  listing.reviewStepIndex = Math.min(3, Math.max(0, input.stepIndex));
   await listing.save();
 
   const owner = await User.findById(listing.ownerId).select("fullName email phone");

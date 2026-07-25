@@ -1,17 +1,57 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import {
+  formDraftKeys,
+  usePersistedState,
+} from "@/hooks/use-persisted-state";
 
 type ProviderBookingCardProps = {
   timeSlots: string[];
   defaultTimeSlot: string;
+  storageKeySuffix?: string;
 };
 
-export function ProviderBookingCard({ timeSlots, defaultTimeSlot }: ProviderBookingCardProps) {
-  const [selectedTime, setSelectedTime] = useState(defaultTimeSlot);
-  const [address, setAddress] = useState("");
-  const [notes, setNotes] = useState("");
+type BookingDraft = {
+  preferredDate: string;
+  selectedTime: string;
+  address: string;
+  notes: string;
+};
+
+export function ProviderBookingCard({
+  timeSlots,
+  defaultTimeSlot,
+  storageKeySuffix = "default",
+}: ProviderBookingCardProps) {
+  const [draft, setDraft, { clear }] = usePersistedState(
+    `${formDraftKeys.providerBooking}:${storageKeySuffix}`,
+    (): BookingDraft => ({
+      preferredDate: "",
+      selectedTime: defaultTimeSlot,
+      address: "",
+      notes: "",
+    }),
+    {
+      merge: (stored, fallback) => {
+        if (!stored || typeof stored !== "object") return fallback;
+        const raw = stored as Partial<BookingDraft>;
+        return {
+          preferredDate:
+            typeof raw.preferredDate === "string"
+              ? raw.preferredDate
+              : fallback.preferredDate,
+          selectedTime:
+            typeof raw.selectedTime === "string" &&
+            timeSlots.includes(raw.selectedTime)
+              ? raw.selectedTime
+              : fallback.selectedTime,
+          address: typeof raw.address === "string" ? raw.address : fallback.address,
+          notes: typeof raw.notes === "string" ? raw.notes : fallback.notes,
+        };
+      },
+    }
+  );
 
   return (
     <aside className="w-full min-w-0 rounded-2xl bg-white p-6 shadow-[0_8px_24px_rgba(10,10,10,0.1)] lg:sticky lg:top-28 lg:w-[min(100%,400px)] lg:shrink-0 lg:p-7">
@@ -33,7 +73,10 @@ export function ProviderBookingCard({ timeSlots, defaultTimeSlot }: ProviderBook
 
       <form
         className="flex flex-col gap-5"
-        onSubmit={(event) => event.preventDefault()}
+        onSubmit={(event) => {
+          event.preventDefault();
+          clear();
+        }}
       >
         <div className="flex flex-col gap-2">
           <label htmlFor="preferred-date" className="font-inter text-[11px] font-bold uppercase text-brand-dark">
@@ -43,6 +86,13 @@ export function ProviderBookingCard({ timeSlots, defaultTimeSlot }: ProviderBook
             <input
               id="preferred-date"
               type="date"
+              value={draft.preferredDate}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  preferredDate: event.target.value,
+                }))
+              }
               className="min-w-0 flex-1 bg-transparent font-inter text-sm text-brand-dark outline-none"
             />
             <Image
@@ -60,12 +110,14 @@ export function ProviderBookingCard({ timeSlots, defaultTimeSlot }: ProviderBook
           <p className="font-inter text-[11px] font-bold uppercase text-brand-dark">Preferred Time</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
             {timeSlots.map((slot) => {
-              const isActive = slot === selectedTime;
+              const isActive = slot === draft.selectedTime;
               return (
                 <button
                   key={slot}
                   type="button"
-                  onClick={() => setSelectedTime(slot)}
+                  onClick={() =>
+                    setDraft((current) => ({ ...current, selectedTime: slot }))
+                  }
                   className={`inline-flex h-[38px] items-center justify-center rounded-lg border font-inter text-xs font-semibold transition-colors ${
                     isActive
                       ? "border-brand-dark bg-brand-dark text-white"
@@ -94,8 +146,13 @@ export function ProviderBookingCard({ timeSlots, defaultTimeSlot }: ProviderBook
             />
             <textarea
               id="service-address"
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
+              value={draft.address}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  address: event.target.value,
+                }))
+              }
               placeholder="Enter your full address in Dhaka"
               rows={2}
               className="min-w-0 flex-1 resize-none bg-transparent font-inter text-sm text-brand-dark outline-none placeholder:text-brand-dark/60"
@@ -109,8 +166,10 @@ export function ProviderBookingCard({ timeSlots, defaultTimeSlot }: ProviderBook
           </label>
           <textarea
             id="additional-notes"
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
+            value={draft.notes}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, notes: event.target.value }))
+            }
             placeholder="Describe the issue or special requirements..."
             rows={3}
             className="min-h-20 w-full resize-none rounded-lg border border-brand-dark/50 p-3 font-inter text-sm text-brand-dark outline-none placeholder:text-brand-dark/60"

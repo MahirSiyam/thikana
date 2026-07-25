@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { routes } from "@/config/routes";
 import {
   signupRoleCopy,
@@ -31,8 +31,15 @@ type SignupRoleStepProps = {
 
 export function SignupRoleStep({ initialRole = "tenant" }: SignupRoleStepProps) {
   const router = useRouter();
-  const { setRole } = useSignupWizard();
+  const { state, hydrated, setRole } = useSignupWizard();
   const [selectedRole, setSelectedRole] = useState<SignupRoleId>(initialRole);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (state.role === "owner") setSelectedRole("property-owner");
+    else if (state.role === "service_provider") setSelectedRole("service-provider");
+    else if (state.role === "tenant") setSelectedRole("tenant");
+  }, [hydrated, state.role]);
 
   const handleSelectRole = (roleId: SignupRoleId) => {
     setSelectedRole(roleId);

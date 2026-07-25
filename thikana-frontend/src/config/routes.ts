@@ -2,6 +2,8 @@ export const routes = {
   home: "/",
   browseHome: "/browse-home",
   homeDetails: "/home-details",
+  homeDetailsFor: (slug: string) =>
+    `/home-details?slug=${encodeURIComponent(slug)}`,
   services: "/services",
   serviceProviderDetails: (slug: string) => `/services/${slug}`,
   about: "/about",

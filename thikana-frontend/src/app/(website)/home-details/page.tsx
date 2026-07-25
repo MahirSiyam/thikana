@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { HomeDetailsPage } from "@/features/home-details/components/HomeDetailsPage";
 
 export const metadata: Metadata = {
@@ -8,5 +9,15 @@ export const metadata: Metadata = {
 };
 
 export default function HomeDetailsRoutePage() {
-  return <HomeDetailsPage />;
+  return (
+    <Suspense
+      fallback={
+        <div className="bg-surface px-4 py-16 font-inter text-sm text-brand-dark/60">
+          Loading home details…
+        </div>
+      }
+    >
+      <HomeDetailsPage />
+    </Suspense>
+  );
 }

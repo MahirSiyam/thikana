@@ -221,6 +221,156 @@ export const sendAccountReactivatedEmail = async (input: {
   });
 };
 
+type ChecklistEmailItem = {
+  label: string;
+  status: "ok" | "issue" | "pending";
+  note?: string;
+};
+
+const checklistTextBlock = (items: ChecklistEmailItem[]) => {
+  const ok = items.filter((item) => item.status === "ok");
+  const issue = items.filter((item) => item.status === "issue");
+  const lines: string[] = [];
+  if (ok.length) {
+    lines.push("Looks good:");
+    ok.forEach((item) => lines.push(`  ✓ ${item.label}`));
+  }
+  if (issue.length) {
+    if (lines.length) lines.push("");
+    lines.push("Needs attention:");
+    issue.forEach((item) =>
+      lines.push(
+        `  ✗ ${item.label}${item.note ? ` — ${item.note}` : ""}`
+      )
+    );
+  }
+  return lines.join("\n");
+};
+
+const checklistHtmlBlock = (items: ChecklistEmailItem[]) => {
+  const ok = items.filter((item) => item.status === "ok");
+  const issue = items.filter((item) => item.status === "issue");
+  return `
+    ${
+      ok.length
+        ? `
+      <p style="margin:16px 0 8px;font-weight:700;">Looks good</p>
+      <ul style="margin:0;padding-left:18px;">
+        ${ok
+          .map(
+            (item) =>
+              `<li style="margin:4px 0;color:#15803d;">✓ ${item.label}</li>`
+          )
+          .join("")}
+      </ul>`
+        : ""
+    }
+    ${
+      issue.length
+        ? `
+      <p style="margin:16px 0 8px;font-weight:700;">Needs attention</p>
+      <ul style="margin:0;padding-left:18px;">
+        ${issue
+          .map(
+            (item) =>
+              `<li style="margin:4px 0;color:#b91c1c;">✗ ${item.label}${
+                item.note
+                  ? ` <span style="color:#6b7280;">— ${item.note}</span>`
+                  : ""
+              }</li>`
+          )
+          .join("")}
+      </ul>`
+        : ""
+    }
+  `;
+};
+
+export const sendListingApprovedEmail = async (input: {
+  email: string;
+  name: string;
+  listingTitle: string;
+  dashboardUrl: string;
+  checklist: ChecklistEmailItem[];
+}): Promise<void> => {
+  const checklistText = checklistTextBlock(input.checklist);
+  await mailTransporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: input.email,
+    subject: `Listing approved – ${input.listingTitle}`,
+    text: [
+      `Hello ${input.name},`,
+      "",
+      `Your listing "${input.listingTitle}" has been approved and is now live on Thikana.`,
+      "",
+      checklistText,
+      "",
+      `Manage your listing: ${input.dashboardUrl}`,
+      "",
+      "— Thikana",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    html: wrapHtml(
+      "Listing approved",
+      `
+        <p>Hello ${input.name},</p>
+        <p>Your listing <strong>${input.listingTitle}</strong> has been approved and is now live on Thikana.</p>
+        ${checklistHtmlBlock(input.checklist)}
+        <p style="margin-top:20px;"><a href="${input.dashboardUrl}">Open My Listings</a></p>
+        <p style="font-size:14px;color:#6b7280;">— Thikana</p>
+      `
+    ),
+  });
+};
+
+export const sendListingRejectedEmail = async (input: {
+  email: string;
+  name: string;
+  listingTitle: string;
+  reason?: string;
+  checklist: ChecklistEmailItem[];
+  dashboardUrl: string;
+}): Promise<void> => {
+  const checklistText = checklistTextBlock(input.checklist);
+  await mailTransporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: input.email,
+    subject: `Listing needs changes – ${input.listingTitle}`,
+    text: [
+      `Hello ${input.name},`,
+      "",
+      `Your listing "${input.listingTitle}" was not approved yet.`,
+      input.reason ? `Admin note: ${input.reason}` : "",
+      "",
+      checklistText,
+      "",
+      "Please update the listing and submit it again for review.",
+      `My Listings: ${input.dashboardUrl}`,
+      "",
+      "— Thikana",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    html: wrapHtml(
+      "Listing needs changes",
+      `
+        <p>Hello ${input.name},</p>
+        <p>Your listing <strong>${input.listingTitle}</strong> was not approved yet.</p>
+        ${
+          input.reason
+            ? `<p><strong>Admin note:</strong> ${input.reason}</p>`
+            : ""
+        }
+        ${checklistHtmlBlock(input.checklist)}
+        <p style="margin-top:16px;">Please update the listing and submit it again for review.</p>
+        <p><a href="${input.dashboardUrl}">Open My Listings</a></p>
+        <p style="font-size:14px;color:#6b7280;">— Thikana</p>
+      `
+    ),
+  });
+};
+
 /** Fire-and-forget email helper that never throws to the caller. */
 export const safeSendEmail = async (
   label: string,

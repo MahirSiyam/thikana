@@ -4,7 +4,6 @@ import type {
   Testimonial,
   TrustFeature,
   VerificationStep,
-  VerifiedHouse,
 } from "@/features/home/types/home.types";
 
 export const heroStatsLeft: HeroStat[] = [
@@ -15,39 +14,6 @@ export const heroStatsLeft: HeroStat[] = [
 export const heroStatsRight: HeroStat[] = [
   { value: "1,200+", label: "Service Providers" },
   { value: "100%", label: "Manual Verification" },
-];
-
-export const verifiedHouses: VerifiedHouse[] = [
-  {
-    id: "house-1",
-    title: "2 Bed Apartment, Dhanmondi",
-    location: "Road 8, Dhanmondi, Dhaka",
-    price: "BDT 12,000",
-    priceSuffix: "/month",
-    rating: 4.5,
-    reviewCount: 24,
-    imageSrc: "/images/home/featured-house-dhanmondi-1.webp",
-  },
-  {
-    id: "house-2",
-    title: "2 Bed Apartment, Dhanmondi",
-    location: "Road 8, Dhanmondi, Dhaka",
-    price: "BDT 12,000",
-    priceSuffix: "/month",
-    rating: 4.5,
-    reviewCount: 24,
-    imageSrc: "/images/home/featured-house-dhanmondi-2.webp",
-  },
-  {
-    id: "house-3",
-    title: "2 Bed Apartment, Dhanmondi",
-    location: "Road 8, Dhanmondi, Dhaka",
-    price: "BDT 12,000",
-    priceSuffix: "/month",
-    rating: 4.5,
-    reviewCount: 24,
-    imageSrc: "/images/home/featured-house-dhanmondi-1.webp",
-  },
 ];
 
 export const homeServices: HomeService[] = [

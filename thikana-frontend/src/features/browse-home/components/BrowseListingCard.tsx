@@ -115,7 +115,11 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
         <div className="flex items-center justify-between gap-3">
           <p className="font-inter text-xs text-[#9ca3af]">({listing.reviewCount} reviews)</p>
           <Link
-            href={routes.homeDetails}
+            href={
+              listing.slug
+                ? routes.homeDetailsFor(listing.slug)
+                : routes.homeDetails
+            }
             className="inline-flex shrink-0 items-center rounded-(--nav-pill-radius) bg-brand-dark px-3 py-2 font-inter text-xs font-semibold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
           >
             View Details

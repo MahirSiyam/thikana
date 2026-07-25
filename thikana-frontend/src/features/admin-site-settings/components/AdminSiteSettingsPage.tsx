@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import {
+  formDraftKeys,
+  usePersistedState,
+} from "@/hooks/use-persisted-state";
 import {
   defaultCommissionSettings,
   defaultGeneralSettings,
@@ -11,6 +14,36 @@ import type {
   NotificationChannel,
   NotificationEventSetting,
 } from "@/features/admin-site-settings/types/admin-site-settings.types";
+
+type SiteSettingsDraft = {
+  general: typeof defaultGeneralSettings;
+  verification: typeof defaultVerificationSettings;
+  notifications: NotificationEventSetting[];
+  commission: typeof defaultCommissionSettings;
+};
+
+const defaultSiteSettingsDraft = (): SiteSettingsDraft => ({
+  general: { ...defaultGeneralSettings },
+  verification: { ...defaultVerificationSettings },
+  notifications: defaultNotificationSettings.map((row) => ({ ...row })),
+  commission: { ...defaultCommissionSettings },
+});
+
+function mergeSiteSettingsDraft(
+  stored: unknown,
+  fallback: SiteSettingsDraft
+): SiteSettingsDraft {
+  if (!stored || typeof stored !== "object") return fallback;
+  const raw = stored as Partial<SiteSettingsDraft>;
+  return {
+    general: { ...fallback.general, ...(raw.general || {}) },
+    verification: { ...fallback.verification, ...(raw.verification || {}) },
+    notifications: Array.isArray(raw.notifications)
+      ? raw.notifications
+      : fallback.notifications,
+    commission: { ...fallback.commission, ...(raw.commission || {}) },
+  };
+}
 
 function SettingsToggle({
   checked,
@@ -78,10 +111,60 @@ function TextField({
 }
 
 export function AdminSiteSettingsPage() {
-  const [general, setGeneral] = useState(defaultGeneralSettings);
-  const [verification, setVerification] = useState(defaultVerificationSettings);
-  const [notifications, setNotifications] = useState(defaultNotificationSettings);
-  const [commission, setCommission] = useState(defaultCommissionSettings);
+  const [draft, setDraft] = usePersistedState(
+    formDraftKeys.adminSiteSettings,
+    defaultSiteSettingsDraft,
+    { merge: mergeSiteSettingsDraft }
+  );
+  const { general, verification, notifications, commission } = draft;
+
+  const setGeneral = (
+    value:
+      | typeof defaultGeneralSettings
+      | ((current: typeof defaultGeneralSettings) => typeof defaultGeneralSettings)
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      general: typeof value === "function" ? value(current.general) : value,
+    }));
+  };
+  const setVerification = (
+    value:
+      | typeof defaultVerificationSettings
+      | ((
+          current: typeof defaultVerificationSettings
+        ) => typeof defaultVerificationSettings)
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      verification:
+        typeof value === "function" ? value(current.verification) : value,
+    }));
+  };
+  const setNotifications = (
+    value:
+      | NotificationEventSetting[]
+      | ((current: NotificationEventSetting[]) => NotificationEventSetting[])
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      notifications:
+        typeof value === "function" ? value(current.notifications) : value,
+    }));
+  };
+  const setCommission = (
+    value:
+      | typeof defaultCommissionSettings
+      | ((
+          current: typeof defaultCommissionSettings
+        ) => typeof defaultCommissionSettings)
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      commission:
+        typeof value === "function" ? value(current.commission) : value,
+    }));
+  };
 
   const toggleNotification = (id: string, channel: NotificationChannel) => {
     setNotifications((current) =>

@@ -86,6 +86,22 @@ export function OwnerDetailsForm() {
     setRestored(true);
   }, [hydrated, restored, state.profileData]);
 
+  useEffect(() => {
+    if (!hydrated || !restored) return;
+    setProfileData({
+      propertyCount: propertyCount.trim() || undefined,
+      preferredContactMethod: contactMethod,
+      ownershipProof,
+    });
+  }, [
+    contactMethod,
+    hydrated,
+    ownershipProof,
+    propertyCount,
+    restored,
+    setProfileData,
+  ]);
+
   const clearLocalPreview = () => {
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);

@@ -5,13 +5,16 @@ export type HeroStat = {
 
 export type VerifiedHouse = {
   id: string;
+  slug: string;
   title: string;
   location: string;
   price: string;
   priceSuffix: string;
   rating: number;
   reviewCount: number;
+  views: number;
   imageSrc: string;
+  href: string;
 };
 
 export type HomeService = {

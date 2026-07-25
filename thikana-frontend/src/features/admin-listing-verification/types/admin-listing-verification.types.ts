@@ -7,7 +7,6 @@ export type ListingVerificationTabId =
 
 export type ListingVerificationStepId =
   | "submitted"
-  | "id-checked"
   | "docs-reviewed"
   | "photo-ok"
   | "verified";

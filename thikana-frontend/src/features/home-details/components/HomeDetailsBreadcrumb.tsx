@@ -1,9 +1,15 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/shared/Container";
 import { routes } from "@/config/routes";
+import type { ListingDto } from "@/lib/api/listings";
 
-export function HomeDetailsBreadcrumb() {
+export function HomeDetailsBreadcrumb({ listing }: { listing?: ListingDto | null }) {
+  const division = listing?.address.division || "Bangladesh";
+  const area = listing?.address.area || "Listing";
+
   return (
     <section className="bg-surface pt-6 sm:pt-10 lg:pt-12" aria-labelledby="home-details-heading">
       <Container>
@@ -34,7 +40,7 @@ export function HomeDetailsBreadcrumb() {
               aria-hidden="true"
               className="shrink-0"
             />
-            <span>Dhaka</span>
+            <span>{listing?.address.district || division}</span>
             <Image
               src="/images/browse-home/icon-breadcrumb-chevron.svg"
               alt=""
@@ -43,13 +49,15 @@ export function HomeDetailsBreadcrumb() {
               aria-hidden="true"
               className="shrink-0"
             />
-            <span className="underline">Dhanmondi</span>
+            <span className="underline">{area}</span>
           </nav>
           <h1
             id="home-details-heading"
-            className="font-jakarta text-[clamp(1.5rem,4vw,2rem)] font-extrabold text-brand-dark"
+            className="font-jakarta text-[clamp(1.5rem,4vw,2rem)] font-extrabold uppercase text-brand-dark"
           >
-            DHAKA DIVISION
+            {listing?.address.division
+              ? `${listing.address.division} Division`
+              : "Home details"}
           </h1>
         </div>
       </Container>
