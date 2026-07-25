@@ -59,6 +59,9 @@ const listingSchema = new Schema(
       default: ["Any"],
     },
     amenities: { type: [String], default: [] },
+    locationMapUrl: { type: String, trim: true },
+    locationLat: { type: Number },
+    locationLng: { type: Number },
     images: { type: [cloudinaryAssetSchema], default: [] },
     coverImageUrl: { type: String, trim: true },
     status: {
@@ -68,6 +71,21 @@ const listingSchema = new Schema(
       index: true,
     },
     reviewStepIndex: { type: Number, min: 0, max: 4, default: 0 },
+    reviewChecklist: {
+      type: [
+        {
+          id: { type: String, required: true },
+          label: { type: String, required: true },
+          status: {
+            type: String,
+            enum: ["pending", "ok", "issue"],
+            required: true,
+          },
+          note: { type: String, trim: true },
+        },
+      ],
+      default: [],
+    },
     rejectionReason: { type: String, trim: true },
     views: { type: Number, default: 0, min: 0 },
     bookingsCount: { type: Number, default: 0, min: 0 },

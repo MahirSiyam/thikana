@@ -1,26 +1,62 @@
 "use client";
 
 import Image from "next/image";
-import { useId, useState, type FormEvent } from "react";
+import { useId, type FormEvent } from "react";
 import {
   contactRoleOptions,
   MESSAGE_MAX_LENGTH,
 } from "@/features/contact-us/data/contact-us.mock";
+import {
+  formDraftKeys,
+  usePersistedState,
+} from "@/hooks/use-persisted-state";
 
 const fieldClassName =
   "h-11 w-full rounded-[10px] border border-brand-dark/50 bg-white px-3 font-inter text-sm text-brand-dark outline-none placeholder:text-brand-dark/50 focus-visible:ring-2 focus-visible:ring-brand-dark";
 
+type ContactDraft = {
+  fullName: string;
+  email: string;
+  role: string;
+  subject: string;
+  message: string;
+  fileName: string | null;
+};
+
+const emptyContactDraft = (): ContactDraft => ({
+  fullName: "",
+  email: "",
+  role: "",
+  subject: "",
+  message: "",
+  fileName: null,
+});
+
+function mergeContactDraft(stored: unknown, fallback: ContactDraft): ContactDraft {
+  if (!stored || typeof stored !== "object") return fallback;
+  const raw = stored as Partial<ContactDraft>;
+  return {
+    fullName: typeof raw.fullName === "string" ? raw.fullName : fallback.fullName,
+    email: typeof raw.email === "string" ? raw.email : fallback.email,
+    role: typeof raw.role === "string" ? raw.role : fallback.role,
+    subject: typeof raw.subject === "string" ? raw.subject : fallback.subject,
+    message: typeof raw.message === "string" ? raw.message : fallback.message,
+    fileName: typeof raw.fileName === "string" ? raw.fileName : null,
+  };
+}
+
 export function ContactMessageForm() {
   const formId = useId();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [draft, setDraft, { clear }] = usePersistedState(
+    formDraftKeys.contactMessage,
+    emptyContactDraft,
+    { merge: mergeContactDraft }
+  );
+  const { fullName, email, role, subject, message, fileName } = draft;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    clear();
   };
 
   return (
@@ -42,7 +78,9 @@ export function ContactMessageForm() {
             id={`${formId}-name`}
             type="text"
             value={fullName}
-            onChange={(event) => setFullName(event.target.value)}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, fullName: event.target.value }))
+            }
             placeholder="Enter your full name"
             className={fieldClassName}
           />
@@ -56,7 +94,9 @@ export function ContactMessageForm() {
             id={`${formId}-email`}
             type="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, email: event.target.value }))
+            }
             placeholder="Enter your email"
             className={fieldClassName}
           />
@@ -70,7 +110,9 @@ export function ContactMessageForm() {
             <select
               id={`${formId}-role`}
               value={role}
-              onChange={(event) => setRole(event.target.value)}
+              onChange={(event) =>
+                setDraft((current) => ({ ...current, role: event.target.value }))
+              }
               className={`${fieldClassName} appearance-none pr-10 ${
                 role ? "text-brand-dark" : "text-brand-dark/50"
               }`}
@@ -103,7 +145,9 @@ export function ContactMessageForm() {
             id={`${formId}-subject`}
             type="text"
             value={subject}
-            onChange={(event) => setSubject(event.target.value)}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, subject: event.target.value }))
+            }
             placeholder="What is your message about?"
             className={fieldClassName}
           />
@@ -118,7 +162,10 @@ export function ContactMessageForm() {
               id={`${formId}-message`}
               value={message}
               onChange={(event) =>
-                setMessage(event.target.value.slice(0, MESSAGE_MAX_LENGTH))
+                setDraft((current) => ({
+                  ...current,
+                  message: event.target.value.slice(0, MESSAGE_MAX_LENGTH),
+                }))
               }
               placeholder="Describe your issue or question..."
               rows={5}
@@ -154,7 +201,10 @@ export function ContactMessageForm() {
             className="sr-only"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              setFileName(file ? file.name : null);
+              setDraft((current) => ({
+                ...current,
+                fileName: file ? file.name : null,
+              }));
             }}
           />
         </label>

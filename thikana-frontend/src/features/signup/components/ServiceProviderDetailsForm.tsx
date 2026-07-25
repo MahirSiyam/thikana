@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  useEffect,
   useId,
   useRef,
   useState,
@@ -18,17 +19,32 @@ import {
   serviceProviderDetailsCopy,
 } from "@/features/signup/data/signup.mock";
 import type { ServiceCategoryId } from "@/features/signup/types/signup.types";
-import { registerAccount } from "@/lib/api/auth";
+import { registerAccount, type CloudinaryAsset } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import { uploadToCloudinary } from "@/lib/api/uploads";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
 const BIO_MAX = serviceProviderDetailsCopy.bioMaxLength;
 
+function isCloudinaryAsset(value: unknown): value is CloudinaryAsset {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "publicId" in value &&
+      typeof (value as CloudinaryAsset).publicId === "string"
+  );
+}
+
 export function ServiceProviderDetailsForm() {
   const router = useRouter();
   const formId = useId();
-  const { setProfileData, buildRegistrationPayload, clear } = useSignupWizard();
+  const {
+    state,
+    hydrated,
+    setProfileData,
+    buildRegistrationPayload,
+    clear,
+  } = useSignupWizard();
   const { refreshProfile } = useAuth();
   const [category, setCategory] = useState<ServiceCategoryId>("electrician");
   const [experience, setExperience] = useState("");
@@ -36,13 +52,64 @@ export function ServiceProviderDetailsForm() {
   const [areaDraft, setAreaDraft] = useState("");
   const [certificateName, setCertificateName] = useState<string | undefined>();
   const [tradeCertificate, setTradeCertificate] = useState<
-    Awaited<ReturnType<typeof uploadToCloudinary>> | undefined
+    CloudinaryAsset | undefined
   >();
   const [uploadingCertificate, setUploadingCertificate] = useState(false);
   const [bio, setBio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
   const certificateInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!hydrated || restored) return;
+    const stored = state.profileData || {};
+    const categoryIds = serviceCategoryOptions.map((option) => option.id);
+    if (
+      typeof stored.serviceCategory === "string" &&
+      categoryIds.includes(stored.serviceCategory as ServiceCategoryId)
+    ) {
+      setCategory(stored.serviceCategory as ServiceCategoryId);
+    }
+    if (typeof stored.yearsOfExperience === "string") {
+      setExperience(stored.yearsOfExperience);
+    }
+    if (Array.isArray(stored.serviceAreas)) {
+      setAreas(stored.serviceAreas.filter((item) => typeof item === "string"));
+    }
+    if (typeof stored.bio === "string") {
+      setBio(stored.bio);
+    }
+    if (isCloudinaryAsset(stored.tradeCertificate)) {
+      setTradeCertificate(stored.tradeCertificate);
+      setCertificateName(
+        stored.tradeCertificate.format
+          ? `certificate.${stored.tradeCertificate.format}`
+          : "Uploaded certificate"
+      );
+    }
+    setRestored(true);
+  }, [hydrated, restored, state.profileData]);
+
+  useEffect(() => {
+    if (!hydrated || !restored) return;
+    setProfileData({
+      serviceCategory: category,
+      yearsOfExperience: experience.trim() || undefined,
+      serviceAreas: areas,
+      tradeCertificate,
+      bio: bio.trim() || undefined,
+    });
+  }, [
+    areas,
+    bio,
+    category,
+    experience,
+    hydrated,
+    restored,
+    setProfileData,
+    tradeCertificate,
+  ]);
 
   const addArea = () => {
     const next = areaDraft.trim();

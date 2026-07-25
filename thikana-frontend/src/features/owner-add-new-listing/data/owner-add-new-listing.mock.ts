@@ -65,6 +65,7 @@ export const defaultListingForm: ListingFormState = {
   amenities: [],
   beds: "1",
   baths: "1",
+  locationMapUrl: "",
 };
 
 export const stepContinueLabels: Record<number, string> = {

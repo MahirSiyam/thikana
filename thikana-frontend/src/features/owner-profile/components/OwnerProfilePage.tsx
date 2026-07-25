@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -29,6 +29,12 @@ import { uploadToCloudinary } from "@/lib/api/uploads";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { auth } from "@/lib/firebase/firebase";
 import { useDashboardSignOut } from "@/lib/auth/use-dashboard-sign-out";
+import {
+  formDraftKeys,
+  readSessionJson,
+  removeSessionJson,
+  writeSessionJson,
+} from "@/hooks/use-persisted-state";
 
 const FALLBACK_IMAGE = "/images/tenant/property-dhanmondi.png";
 
@@ -128,6 +134,21 @@ type EditForm = {
   propertyCount: string;
 };
 
+type OwnerProfileEditDraft = {
+  editing: boolean;
+  form: EditForm;
+};
+
+const emptyEditForm = (): EditForm => ({
+  fullName: "",
+  phone: "",
+  division: "",
+  district: "",
+  area: "",
+  preferredContactMethod: "phone",
+  propertyCount: "",
+});
+
 export function OwnerProfilePage() {
   const { refreshProfile } = useAuth();
   const { signOutUser } = useDashboardSignOut({
@@ -146,19 +167,32 @@ export function OwnerProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState<EditForm>({
-    fullName: "",
-    phone: "",
-    division: "",
-    district: "",
-    area: "",
-    preferredContactMethod: "phone",
-    propertyCount: "",
-  });
+  const [form, setForm] = useState<EditForm>(emptyEditForm);
+  const [draftHydrated, setDraftHydrated] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useLayoutEffect(() => {
+    const draft = readSessionJson<OwnerProfileEditDraft>(
+      formDraftKeys.ownerProfileEdit
+    );
+    if (draft?.editing && draft.form) {
+      setForm({ ...emptyEditForm(), ...draft.form });
+      setEditing(true);
+    }
+    setDraftHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
+    if (editing) {
+      writeSessionJson(formDraftKeys.ownerProfileEdit, { editing: true, form });
+    } else {
+      removeSessionJson(formDraftKeys.ownerProfileEdit);
+    }
+  }, [draftHydrated, editing, form]);
 
   const showAction = (message: string) => {
     setActionMessage(message);
@@ -175,7 +209,7 @@ export function OwnerProfilePage() {
       ]);
       setProfile(full);
       setListings(mine.data || []);
-      setForm({
+      const fromApi: EditForm = {
         fullName: full.fullName || "",
         phone: full.phone || "",
         division: full.address?.division || "",
@@ -184,7 +218,16 @@ export function OwnerProfilePage() {
         preferredContactMethod:
           full.owner?.preferredContactMethod || "phone",
         propertyCount: full.owner?.propertyCount || "",
-      });
+      };
+      const draft = readSessionJson<OwnerProfileEditDraft>(
+        formDraftKeys.ownerProfileEdit
+      );
+      if (draft?.editing && draft.form) {
+        setForm({ ...emptyEditForm(), ...draft.form });
+        setEditing(true);
+      } else {
+        setForm(fromApi);
+      }
       setImageFailed(false);
     } catch (err) {
       setError(
@@ -325,6 +368,7 @@ export function OwnerProfilePage() {
       });
       setProfile(updated);
       setEditing(false);
+      removeSessionJson(formDraftKeys.ownerProfileEdit);
       await refreshProfile();
       showAction("Profile updated.");
     } catch (err) {

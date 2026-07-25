@@ -23,6 +23,10 @@ import { createListing } from "@/lib/api/listings";
 import { ApiError } from "@/lib/api/client";
 import { uploadToCloudinary } from "@/lib/api/uploads";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import {
+  formDraftKeys,
+  usePersistedState,
+} from "@/hooks/use-persisted-state";
 
 function ListingStepper({ activeStep }: { activeStep: number }) {
   return (
@@ -195,6 +199,22 @@ function PropertyInfoStep({
             className="h-11 w-full rounded-lg border border-[#e5e5e2] px-4 font-inter text-sm text-brand-dark outline-none placeholder:text-[#9ca3af] focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <FieldLabel htmlFor="location-map-url">Location map link</FieldLabel>
+        <input
+          id="location-map-url"
+          type="url"
+          value={form.locationMapUrl}
+          onChange={(event) => onChange("locationMapUrl", event.target.value)}
+          placeholder="https://maps.app.goo.gl/... or full Google Maps link"
+          className="h-11 w-full rounded-lg border border-[#e5e5e2] px-4 font-inter text-sm text-brand-dark outline-none placeholder:text-[#9ca3af] focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+        />
+        <p className="font-inter text-xs text-[#6b7280]">
+          Google Maps → Share → Copy link, then paste here. The exact pin will show on the
+          listing details page.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -491,6 +511,15 @@ function ReviewStep({ form }: { form: ListingFormState }) {
               Amenities: {form.amenities.join(", ")}
             </p>
           ) : null}
+          {form.locationMapUrl.trim() ? (
+            <p className="font-inter text-sm text-[#6b7280]">
+              Map link added ✓
+            </p>
+          ) : (
+            <p className="font-inter text-sm text-amber-700">
+              No map link yet — tenants will see a map based on area name.
+            </p>
+          )}
         </div>
       </div>
       <p className="font-inter text-sm text-[#6b7280]">
@@ -525,17 +554,82 @@ function buildPayload(form: ListingFormState, submitForReview: boolean) {
     availableFrom: form.availableFrom || null,
     whoCanRent: form.whoCanRent,
     amenities: form.amenities,
+    locationMapUrl: form.locationMapUrl.trim() || undefined,
     images,
     coverImageUrl: form.images[0]?.secureUrl || undefined,
     submitForReview,
   };
 }
 
+type ListingWizardDraft = {
+  activeStep: number;
+  form: ListingFormState;
+};
+
+const defaultListingWizardDraft = (): ListingWizardDraft => ({
+  activeStep: 1,
+  form: { ...defaultListingForm, whoCanRent: [...defaultListingForm.whoCanRent] },
+});
+
+function mergeListingWizardDraft(
+  stored: unknown,
+  fallback: ListingWizardDraft
+): ListingWizardDraft {
+  if (!stored || typeof stored !== "object") return fallback;
+  const raw = stored as Partial<ListingWizardDraft>;
+  const step =
+    typeof raw.activeStep === "number" &&
+    raw.activeStep >= 1 &&
+    raw.activeStep <= listingSteps.length
+      ? raw.activeStep
+      : fallback.activeStep;
+  return {
+    activeStep: step,
+    form: {
+      ...fallback.form,
+      ...(raw.form || {}),
+      whoCanRent: Array.isArray(raw.form?.whoCanRent)
+        ? (raw.form.whoCanRent as WhoCanRent[])
+        : fallback.form.whoCanRent,
+      amenities: Array.isArray(raw.form?.amenities)
+        ? (raw.form.amenities as string[])
+        : fallback.form.amenities,
+      images: Array.isArray(raw.form?.images)
+        ? (raw.form.images as ListingFormState["images"])
+        : fallback.form.images,
+    },
+  };
+}
+
 export function OwnerAddNewListingPage() {
   const router = useRouter();
   const { profile } = useAuth();
-  const [activeStep, setActiveStep] = useState(1);
-  const [form, setForm] = useState<ListingFormState>(defaultListingForm);
+  const [draft, setDraft, { clear: clearDraft }] = usePersistedState(
+    formDraftKeys.ownerAddListing,
+    defaultListingWizardDraft,
+    { merge: mergeListingWizardDraft }
+  );
+  const activeStep = draft.activeStep;
+  const form = draft.form;
+  const setActiveStep = (
+    value: number | ((current: number) => number)
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      activeStep:
+        typeof value === "function" ? value(current.activeStep) : value,
+    }));
+  };
+  const setForm = (
+    value:
+      | ListingFormState
+      | ((current: ListingFormState) => ListingFormState)
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      form: typeof value === "function" ? value(current.form) : value,
+    }));
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -635,6 +729,7 @@ export function OwnerAddNewListingPage() {
     setIsSubmitting(true);
     try {
       await createListing(buildPayload(form, submitForReview));
+      clearDraft();
       router.push(routes.ownerMyListings);
     } catch (err) {
       setError(

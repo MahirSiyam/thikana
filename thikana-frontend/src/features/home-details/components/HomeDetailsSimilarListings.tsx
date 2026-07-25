@@ -3,9 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { homeDetailsSimilarListings } from "@/features/home-details/data/home-details.mock";
 import type { HomeDetailsSimilarListing } from "@/features/home-details/types/home-details.types";
-import { routes } from "@/config/routes";
 
 function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing }) {
   const [saved, setSaved] = useState(false);
@@ -13,15 +11,18 @@ function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing })
   return (
     <article className="flex w-full flex-col overflow-hidden rounded-[10px] bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
       <div className="relative h-40 w-full shrink-0">
-        <Image
-          src={listing.imageSrc}
-          alt={listing.title}
-          fill
-          className="rounded-t-[10px] object-cover"
-          sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 400px"
-        />
+        <Link href={listing.href} className="absolute inset-0">
+          <Image
+            src={listing.imageSrc}
+            alt={listing.title}
+            fill
+            className="rounded-t-[10px] object-cover"
+            sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 400px"
+          />
+          <span className="sr-only">View {listing.title}</span>
+        </Link>
 
-        <div className="absolute left-3 top-3">
+        <div className="pointer-events-none absolute left-3 top-3">
           <span className="inline-flex rounded-full bg-black px-2.5 py-1 font-inter text-[11px] font-semibold text-white">
             {listing.priceLabel}
           </span>
@@ -32,7 +33,7 @@ function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing })
           aria-label={saved ? "Remove bookmark" : "Bookmark listing"}
           aria-pressed={saved}
           onClick={() => setSaved((value) => !value)}
-          className="absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-2xl border border-[#e5e5e2] bg-white transition-colors hover:bg-surface"
+          className="absolute right-3 top-3 z-10 inline-flex size-8 items-center justify-center rounded-2xl border border-[#e5e5e2] bg-white transition-colors hover:bg-surface"
         >
           <Image
             src="/images/browse-home/icon-bookmark.svg"
@@ -45,7 +46,7 @@ function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing })
         </button>
 
         {listing.verified ? (
-          <div className="absolute bottom-2 left-3">
+          <div className="pointer-events-none absolute bottom-2 left-3">
             <span className="inline-flex items-center gap-1 rounded-full bg-[#059669] px-2.5 py-1 font-inter text-[11px] font-semibold text-white">
               <Image
                 src="/images/browse-home/icon-check.svg"
@@ -72,7 +73,9 @@ function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing })
               aria-hidden="true"
               className="shrink-0"
             />
-            <p className="truncate font-inter text-[13px] text-brand-dark/50">{listing.location}</p>
+            <p className="truncate font-inter text-[13px] text-brand-dark/50">
+              {listing.location}
+            </p>
           </div>
         </div>
 
@@ -85,7 +88,9 @@ function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing })
               height={14}
               aria-hidden="true"
             />
-            <span className="font-inter text-xs text-brand-dark/50">{listing.beds} Beds</span>
+            <span className="font-inter text-xs text-brand-dark/50">
+              {listing.beds} Beds
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <Image
@@ -95,7 +100,9 @@ function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing })
               height={14}
               aria-hidden="true"
             />
-            <span className="font-inter text-xs text-brand-dark/50">{listing.baths} Bath</span>
+            <span className="font-inter text-xs text-brand-dark/50">
+              {listing.baths} Bath
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <Image
@@ -105,14 +112,18 @@ function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing })
               height={14}
               aria-hidden="true"
             />
-            <span className="font-inter text-xs text-brand-dark/50">{listing.sqft} sqft</span>
+            <span className="font-inter text-xs text-brand-dark/50">
+              {listing.sqft.toLocaleString("en-US")} sqft
+            </span>
           </div>
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p className="font-inter text-xs text-brand-dark">({listing.reviewCount} reviews)</p>
+          <p className="font-inter text-xs text-brand-dark">
+            {listing.views.toLocaleString("en-US")} views
+          </p>
           <Link
-            href={routes.homeDetails}
+            href={listing.href}
             className="inline-flex shrink-0 items-center rounded-(--nav-pill-radius) bg-brand-dark px-3 py-2 font-inter text-xs font-semibold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
           >
             View Details
@@ -123,7 +134,11 @@ function SimilarListingCard({ listing }: { listing: HomeDetailsSimilarListing })
   );
 }
 
-export function HomeDetailsSimilarListings() {
+export function HomeDetailsSimilarListings({
+  listings,
+}: {
+  listings: HomeDetailsSimilarListing[];
+}) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollByCard = (direction: "prev" | "next") => {
@@ -135,6 +150,8 @@ export function HomeDetailsSimilarListings() {
       behavior: "smooth",
     });
   };
+
+  if (listings.length === 0) return null;
 
   return (
     <section className="bg-surface py-16 sm:py-20" aria-labelledby="similar-listings-heading">
@@ -179,7 +196,7 @@ export function HomeDetailsSimilarListings() {
           ref={scrollRef}
           className="mt-6 flex gap-5 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {homeDetailsSimilarListings.map((listing) => (
+          {listings.map((listing) => (
             <div
               key={listing.id}
               className="w-[min(100%,398px)] shrink-0 snap-start sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"

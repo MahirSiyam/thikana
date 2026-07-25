@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useId, useState } from "react";
+import { useId } from "react";
 import { serviceProviderUser } from "@/features/service-provider/data/service-provider.mock";
 import {
   serviceProfileCategories,
@@ -13,6 +13,60 @@ import type {
   ServiceProfileSecurityRow,
   ServiceProfileVerificationItem,
 } from "@/features/service-provider-service-profile/types/service-provider-service-profile.types";
+import {
+  formDraftKeys,
+  usePersistedState,
+} from "@/hooks/use-persisted-state";
+import { useState } from "react";
+
+type ServiceProfileDraft = {
+  displayName: string;
+  categories: ServiceProfileCategoryId[];
+  yearsOfExperience: string;
+  serviceAreas: string[];
+  shortBio: string;
+  pricingItems: ServiceProfilePricingItem[];
+  availabilityDays: typeof serviceProviderServiceProfile.availabilityDays;
+  workingHoursStart: string;
+  workingHoursEnd: string;
+};
+
+function defaultServiceProfileDraft(): ServiceProfileDraft {
+  const initial = serviceProviderServiceProfile;
+  return {
+    displayName: initial.displayName,
+    categories: [...initial.categories],
+    yearsOfExperience: initial.yearsOfExperience,
+    serviceAreas: [...initial.serviceAreas],
+    shortBio: initial.shortBio,
+    pricingItems: initial.pricingItems.map((item) => ({ ...item })),
+    availabilityDays: initial.availabilityDays.map((day) => ({ ...day })),
+    workingHoursStart: initial.workingHoursStart,
+    workingHoursEnd: initial.workingHoursEnd,
+  };
+}
+
+function mergeServiceProfileDraft(
+  stored: unknown,
+  fallback: ServiceProfileDraft
+): ServiceProfileDraft {
+  if (!stored || typeof stored !== "object") return fallback;
+  const raw = stored as Partial<ServiceProfileDraft>;
+  return {
+    ...fallback,
+    ...raw,
+    categories: Array.isArray(raw.categories) ? raw.categories : fallback.categories,
+    serviceAreas: Array.isArray(raw.serviceAreas)
+      ? raw.serviceAreas
+      : fallback.serviceAreas,
+    pricingItems: Array.isArray(raw.pricingItems)
+      ? raw.pricingItems
+      : fallback.pricingItems,
+    availabilityDays: Array.isArray(raw.availabilityDays)
+      ? raw.availabilityDays
+      : fallback.availabilityDays,
+  };
+}
 
 function VerificationRow({ item }: { item: ServiceProfileVerificationItem }) {
   return (
@@ -63,27 +117,75 @@ function SecurityRowBox({
 
 export function ServiceProviderServiceProfilePage() {
   const formId = useId();
-  const initial = serviceProviderServiceProfile;
+  const [draft, setDraft] = usePersistedState(
+    formDraftKeys.serviceProviderProfile,
+    defaultServiceProfileDraft,
+    { merge: mergeServiceProfileDraft }
+  );
+  const {
+    displayName,
+    categories,
+    yearsOfExperience,
+    serviceAreas,
+    shortBio,
+    pricingItems,
+    availabilityDays,
+    workingHoursStart,
+    workingHoursEnd,
+  } = draft;
 
-  const [displayName, setDisplayName] = useState(initial.displayName);
-  const [categories, setCategories] = useState<ServiceProfileCategoryId[]>(
-    initial.categories,
-  );
-  const [yearsOfExperience, setYearsOfExperience] = useState(
-    initial.yearsOfExperience,
-  );
-  const [serviceAreas, setServiceAreas] = useState<string[]>(initial.serviceAreas);
-  const [shortBio, setShortBio] = useState(initial.shortBio);
-  const [pricingItems, setPricingItems] = useState<ServiceProfilePricingItem[]>(
-    initial.pricingItems,
-  );
-  const [availabilityDays, setAvailabilityDays] = useState(
-    initial.availabilityDays,
-  );
-  const [workingHoursStart, setWorkingHoursStart] = useState(
-    initial.workingHoursStart,
-  );
-  const [workingHoursEnd, setWorkingHoursEnd] = useState(initial.workingHoursEnd);
+  const setDisplayName = (value: string) =>
+    setDraft((current) => ({ ...current, displayName: value }));
+  const setCategories = (
+    value:
+      | ServiceProfileCategoryId[]
+      | ((current: ServiceProfileCategoryId[]) => ServiceProfileCategoryId[])
+  ) =>
+    setDraft((current) => ({
+      ...current,
+      categories: typeof value === "function" ? value(current.categories) : value,
+    }));
+  const setYearsOfExperience = (value: string) =>
+    setDraft((current) => ({ ...current, yearsOfExperience: value }));
+  const setServiceAreas = (
+    value: string[] | ((current: string[]) => string[])
+  ) =>
+    setDraft((current) => ({
+      ...current,
+      serviceAreas:
+        typeof value === "function" ? value(current.serviceAreas) : value,
+    }));
+  const setShortBio = (value: string) =>
+    setDraft((current) => ({ ...current, shortBio: value }));
+  const setPricingItems = (
+    value:
+      | ServiceProfilePricingItem[]
+      | ((current: ServiceProfilePricingItem[]) => ServiceProfilePricingItem[])
+  ) =>
+    setDraft((current) => ({
+      ...current,
+      pricingItems:
+        typeof value === "function" ? value(current.pricingItems) : value,
+    }));
+  const setAvailabilityDays = (
+    value:
+      | ServiceProfileDraft["availabilityDays"]
+      | ((
+          current: ServiceProfileDraft["availabilityDays"]
+        ) => ServiceProfileDraft["availabilityDays"])
+  ) =>
+    setDraft((current) => ({
+      ...current,
+      availabilityDays:
+        typeof value === "function"
+          ? value(current.availabilityDays)
+          : value,
+    }));
+  const setWorkingHoursStart = (value: string) =>
+    setDraft((current) => ({ ...current, workingHoursStart: value }));
+  const setWorkingHoursEnd = (value: string) =>
+    setDraft((current) => ({ ...current, workingHoursEnd: value }));
+
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   function showStatus(message: string) {
@@ -148,15 +250,15 @@ export function ServiceProviderServiceProfilePage() {
   }
 
   function handleCancel() {
-    setDisplayName(initial.displayName);
-    setCategories(initial.categories);
-    setYearsOfExperience(initial.yearsOfExperience);
-    setServiceAreas(initial.serviceAreas);
-    setShortBio(initial.shortBio);
-    setPricingItems(initial.pricingItems);
-    setAvailabilityDays(initial.availabilityDays);
-    setWorkingHoursStart(initial.workingHoursStart);
-    setWorkingHoursEnd(initial.workingHoursEnd);
+    setDisplayName(serviceProviderServiceProfile.displayName);
+    setCategories(serviceProviderServiceProfile.categories);
+    setYearsOfExperience(serviceProviderServiceProfile.yearsOfExperience);
+    setServiceAreas(serviceProviderServiceProfile.serviceAreas);
+    setShortBio(serviceProviderServiceProfile.shortBio);
+    setPricingItems(serviceProviderServiceProfile.pricingItems);
+    setAvailabilityDays(serviceProviderServiceProfile.availabilityDays);
+    setWorkingHoursStart(serviceProviderServiceProfile.workingHoursStart);
+    setWorkingHoursEnd(serviceProviderServiceProfile.workingHoursEnd);
     showStatus("Changes discarded.");
   }
 
@@ -257,7 +359,7 @@ export function ServiceProviderServiceProfilePage() {
               <div className="relative size-24">
                 <div className="relative size-24 overflow-hidden rounded-full">
                   <Image
-                    src={initial.avatarSrc}
+                    src={serviceProviderServiceProfile.avatarSrc}
                     alt=""
                     fill
                     className="object-cover"
@@ -379,13 +481,13 @@ export function ServiceProviderServiceProfilePage() {
                 <textarea
                   id={`${formId}-bio`}
                   value={shortBio}
-                  maxLength={initial.bioMaxLength}
+                  maxLength={serviceProviderServiceProfile.bioMaxLength}
                   onChange={(event) => setShortBio(event.target.value)}
                   rows={4}
                   className="min-h-[100px] w-full resize-none rounded-[10px] border border-[#e5e5e2] bg-white p-4 pb-8 font-inter text-sm text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
                 />
                 <span className="pointer-events-none absolute right-4 bottom-3 font-inter text-xs text-[#9b9b98]">
-                  {shortBio.length} / {initial.bioMaxLength}
+                  {shortBio.length} / {serviceProviderServiceProfile.bioMaxLength}
                 </span>
               </div>
             </div>
@@ -397,11 +499,11 @@ export function ServiceProviderServiceProfilePage() {
                 Verification Status
               </h2>
               <div className="flex flex-col gap-4">
-                {initial.verificationItems.map((item) => (
+                {serviceProviderServiceProfile.verificationItems.map((item) => (
                   <VerificationRow key={item.id} item={item} />
                 ))}
               </div>
-              {initial.allVerified ? (
+              {serviceProviderServiceProfile.allVerified ? (
                 <div className="flex justify-center pt-1">
                   <span className="inline-flex items-center gap-2 rounded-full bg-brand-dark px-4 py-2 font-inter text-[11px] font-semibold text-white">
                     <Image
@@ -423,7 +525,7 @@ export function ServiceProviderServiceProfilePage() {
                 Account & Security
               </h2>
               <div className="flex flex-col gap-3">
-                {initial.securityRows.map((row) => (
+                {serviceProviderServiceProfile.securityRows.map((row) => (
                   <SecurityRowBox
                     key={row.id}
                     row={row}

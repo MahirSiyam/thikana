@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
 import { useSignupWizard } from "@/features/signup/context/SignupWizardProvider";
@@ -18,13 +18,55 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 export function TenantDetailsForm() {
   const router = useRouter();
   const formId = useId();
-  const { setProfileData, buildRegistrationPayload, clear } = useSignupWizard();
+  const {
+    state,
+    hydrated,
+    setProfileData,
+    buildRegistrationPayload,
+    clear,
+  } = useSignupWizard();
   const { refreshProfile } = useAuth();
   const [lookingAs, setLookingAs] = useState<TenantLookingAsId>("family");
   const [location, setLocation] = useState("");
   const [budget, setBudget] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+
+  useEffect(() => {
+    if (!hydrated || restored) return;
+    const stored = state.profileData || {};
+    if (
+      stored.lookingAs === "family" ||
+      stored.lookingAs === "bachelor" ||
+      stored.lookingAs === "student"
+    ) {
+      setLookingAs(stored.lookingAs);
+    }
+    if (typeof stored.preferredLocation === "string") {
+      setLocation(stored.preferredLocation);
+    }
+    if (typeof stored.budgetRange === "string") {
+      setBudget(stored.budgetRange);
+    }
+    setRestored(true);
+  }, [hydrated, restored, state.profileData]);
+
+  useEffect(() => {
+    if (!hydrated || !restored) return;
+    setProfileData({
+      lookingAs,
+      preferredLocation: location.trim() || undefined,
+      budgetRange: budget.trim() || undefined,
+    });
+  }, [
+    budget,
+    hydrated,
+    lookingAs,
+    location,
+    restored,
+    setProfileData,
+  ]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -11,6 +11,11 @@ import {
   type ReactNode,
 } from "react";
 import type { AppRole, CloudinaryAsset, RegistrationPayload } from "@/lib/api/auth";
+import {
+  readSessionJson,
+  removeSessionJson,
+  writeSessionJson,
+} from "@/hooks/use-persisted-state";
 
 export type SignupRole = Exclude<AppRole, "admin">;
 
@@ -92,14 +97,9 @@ const SignupWizardContext = createContext<SignupWizardContextValue | undefined>(
 );
 
 function readStoredState(): SignupWizardState {
-  if (typeof window === "undefined") return emptyState();
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return emptyState();
-    return mergeStoredState(JSON.parse(raw));
-  } catch {
-    return emptyState();
-  }
+  const stored = readSessionJson<unknown>(STORAGE_KEY);
+  if (!stored) return emptyState();
+  return mergeStoredState(stored);
 }
 
 export function SignupWizardProvider({ children }: { children: ReactNode }) {
@@ -113,11 +113,7 @@ export function SignupWizardProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // ignore storage failures
-    }
+    writeSessionJson(STORAGE_KEY, state);
   }, [hydrated, state]);
 
   const setRole = useCallback((role: SignupRole) => {
@@ -168,11 +164,7 @@ export function SignupWizardProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => {
     setState(emptyState());
-    try {
-      sessionStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    removeSessionJson(STORAGE_KEY);
   }, []);
 
   const buildRegistrationPayload = useCallback((): RegistrationPayload => {

@@ -4,32 +4,19 @@ export type HomeDetailsFacility = {
   iconSrc: string;
 };
 
-export type HomeDetailsRatingCategory = {
-  id: string;
-  label: string;
-  score: number;
-};
-
-export type HomeDetailsReview = {
-  id: string;
-  name: string;
-  date: string;
-  rating: number;
-  quote: string;
-  avatarSrc: string;
-};
-
 export type HomeDetailsSimilarListing = {
   id: string;
+  slug: string;
   title: string;
   location: string;
   priceLabel: string;
   beds: number;
   baths: number;
   sqft: number;
-  reviewCount: number;
+  views: number;
   verified: boolean;
   imageSrc: string;
+  href: string;
 };
 
 export type HomeDetailsGalleryImage = {

@@ -36,4 +36,5 @@ export type ListingFormState = {
   amenities: string[];
   beds: string;
   baths: string;
+  locationMapUrl: string;
 };

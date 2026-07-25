@@ -8,6 +8,11 @@ import { useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { getMe } from "@/lib/api/auth";
 import { adminAuth } from "@/lib/firebase/firebase";
+import {
+  formDraftKeys,
+  removeSessionJson,
+  usePersistedState,
+} from "@/hooks/use-persisted-state";
 
 function firebaseSigninErrorMessage(error: unknown): string {
   const code = (error as { code?: string })?.code;
@@ -26,7 +31,7 @@ function firebaseSigninErrorMessage(error: unknown): string {
 export function AdminSignInForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = usePersistedState(formDraftKeys.adminSignInEmail, "");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +61,7 @@ export function AdminSignInForm() {
         return;
       }
 
+      removeSessionJson(formDraftKeys.adminSignInEmail);
       router.push(routes.adminOverview);
     } catch (err) {
       setError(firebaseSigninErrorMessage(err));

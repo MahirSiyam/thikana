@@ -43,30 +43,38 @@ export const listingVerificationSteps = [
     hint: "Owner sent this listing for review",
   },
   {
-    id: "id-checked",
-    label: "ID Checked",
-    shortLabel: "2. ID",
-    hint: "Confirm owner identity looks valid",
-  },
-  {
     id: "docs-reviewed",
     label: "Docs Reviewed",
-    shortLabel: "3. Docs",
+    shortLabel: "2. Docs",
     hint: "Property info & documents look complete",
   },
   {
     id: "photo-ok",
     label: "Photo OK",
-    shortLabel: "4. Photos",
+    shortLabel: "3. Photos",
     hint: "Photos are clear and match the listing",
   },
   {
     id: "verified",
     label: "Verified",
-    shortLabel: "5. Done",
+    shortLabel: "4. Done",
     hint: "Ready to approve and publish",
   },
 ] as const;
+
+/** Map stored reviewStepIndex to the current 4-step UI (ID Checked removed). */
+export function toListingReviewUiStep(stored?: number | null) {
+  const n =
+    typeof stored === "number" && !Number.isNaN(stored)
+      ? Math.min(4, Math.max(0, stored))
+      : 0;
+  // Legacy 5-step: 0 submit, 1 id, 2 docs, 3 photo, 4 verified
+  // Current 4-step: 0 submit, 1 docs, 2 photo, 3 verified
+  if (n <= 0) return 0;
+  if (n <= 2) return 1;
+  if (n === 3) return 2;
+  return 3;
+}
 
 export const pendingVerificationCount = 18;
 

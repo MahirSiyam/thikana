@@ -4,6 +4,7 @@ import {
   PROPERTY_TYPES,
   WHO_CAN_RENT,
 } from "../types/domain";
+import { LISTING_REVIEW_CHECKLIST_IDS } from "../constants/listing-review-checklist";
 
 const cloudinaryAssetSchema = z.object({
   publicId: z.string().min(1),
@@ -35,6 +36,11 @@ export const listingUpsertSchema = z.object({
   availableFrom: z.coerce.date().optional().nullable(),
   whoCanRent: z.array(z.enum(WHO_CAN_RENT)).min(1).default(["Any"]),
   amenities: z.array(z.string().trim().max(60)).max(40).optional(),
+  locationMapUrl: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().url("Enter a valid map link").max(1000).optional()
+  ),
   images: z.array(cloudinaryAssetSchema).max(20).optional(),
   coverImageUrl: z.string().url().optional().or(z.literal("")),
   submitForReview: z.boolean().optional(),
@@ -50,12 +56,13 @@ export const listingListQuerySchema = z.object({
   whoCanRent: z.enum(WHO_CAN_RENT).optional(),
   minPrice: z.coerce.number().int().min(0).optional(),
   maxPrice: z.coerce.number().int().min(0).optional(),
-  sortBy: z.enum(["createdAt", "monthlyRent", "views"]).default("createdAt"),
+  sortBy: z.enum(["createdAt", "monthlyRent", "views", "approvedAt"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
 export const adminListingListQuerySchema = listingListQuerySchema.extend({
   status: z.enum(LISTING_STATUSES).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
   reviewTab: z
     .enum([
       "all",
@@ -67,8 +74,26 @@ export const adminListingListQuerySchema = listingListQuerySchema.extend({
     .optional(),
 });
 
+export const listingReviewChecklistItemSchema = z.object({
+  id: z.enum(LISTING_REVIEW_CHECKLIST_IDS),
+  label: z.string().trim().min(1).max(120),
+  status: z.enum(["pending", "ok", "issue"]),
+  note: z.string().trim().max(300).optional(),
+});
+
+export const listingReviewChecklistSchema = z
+  .array(listingReviewChecklistItemSchema)
+  .min(1)
+  .max(20);
+
 export const rejectListingSchema = z.object({
-  reason: z.string().trim().min(3).max(1000),
+  reason: z.string().trim().max(1000).optional().default(""),
+  checklist: listingReviewChecklistSchema,
+});
+
+export const approveListingSchema = z.object({
+  note: z.string().trim().max(1000).optional(),
+  checklist: listingReviewChecklistSchema,
 });
 
 export const listingIdParamSchema = z.object({

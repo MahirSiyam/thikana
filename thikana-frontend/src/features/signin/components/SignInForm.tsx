@@ -9,6 +9,11 @@ import { routes } from "@/config/routes";
 import { getMe } from "@/lib/api/auth";
 import { auth } from "@/lib/firebase/firebase";
 import { resolvePostLoginRoute } from "@/lib/auth/resolve-post-login-route";
+import {
+  formDraftKeys,
+  removeSessionJson,
+  usePersistedState,
+} from "@/hooks/use-persisted-state";
 
 function firebaseSigninErrorMessage(error: unknown): string {
   const code = (error as { code?: string })?.code;
@@ -27,7 +32,7 @@ function firebaseSigninErrorMessage(error: unknown): string {
 export function SignInForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = usePersistedState(formDraftKeys.signInEmail, "");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +44,7 @@ export function SignInForm() {
     try {
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
       await credential.user.reload();
+      removeSessionJson(formDraftKeys.signInEmail);
 
       if (!credential.user.emailVerified) {
         router.push(

@@ -11,6 +11,7 @@ import {
 import { getClientMeta, parseOrThrow, sendZodError } from "../utils/http";
 import {
   adminListingListQuerySchema,
+  approveListingSchema,
   listingIdParamSchema,
   rejectListingSchema,
 } from "../validation/listing.validation";
@@ -73,16 +74,14 @@ export const approveListingByAdmin = async (req: Request, res: Response) => {
     }
 
     const { listingId } = parseOrThrow(listingIdParamSchema, req.params);
-    const body = parseOrThrow(
-      z.object({ note: z.string().trim().max(1000).optional() }),
-      req.body || {}
-    );
+    const body = parseOrThrow(approveListingSchema, req.body || {});
     const meta = getClientMeta(req);
     const listing = await approveListing({
       adminId: String(req.user._id),
       adminRole: "admin",
       listingId,
       note: body.note,
+      checklist: body.checklist,
       ipAddress: meta.ipAddress,
       userAgent: meta.userAgent,
     });
@@ -126,7 +125,8 @@ export const rejectListingByAdmin = async (req: Request, res: Response) => {
       adminId: String(req.user._id),
       adminRole: "admin",
       listingId,
-      reason: body.reason,
+      reason: body.reason || "",
+      checklist: body.checklist,
       ipAddress: meta.ipAddress,
       userAgent: meta.userAgent,
     });
@@ -158,7 +158,7 @@ export const setListingReviewStep = async (req: Request, res: Response) => {
     const { listingId } = parseOrThrow(listingIdParamSchema, req.params);
     const body = parseOrThrow(
       z.object({
-        stepIndex: z.coerce.number().int().min(0).max(4),
+        stepIndex: z.coerce.number().int().min(0).max(3),
       }),
       req.body
     );
