@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { AdminSignInForm } from "@/features/signin/components/AdminSignInForm";
 import { routes } from "@/config/routes";
-import { TenantVerifyOtpForm } from "@/features/signup/components/TenantVerifyOtpForm";
 
-function SignupWordmark({ className = "" }: { className?: string }) {
+function SignInWordmark({ className = "" }: { className?: string }) {
   return (
     <p className={`font-outfit font-extrabold leading-[0.8] text-brand-dark ${className}`}>
       T
@@ -14,20 +14,22 @@ function SignupWordmark({ className = "" }: { className?: string }) {
   );
 }
 
-export function SignupTenantVerifyOtpPage() {
+export function AdminSignInPage() {
   return (
     <div className="relative flex min-h-dvh flex-col bg-surface">
       <div className="px-4 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pt-4">
         <Link
           href={routes.home}
-          className="inline-flex w-fit rounded-2xl bg-white/50 px-2.5 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          className="inline-flex w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
         >
-          <SignupWordmark className="text-[28px] sm:text-[30px]" />
+          <SignInWordmark className="text-[32px] sm:text-[40px]" />
         </Link>
       </div>
 
       <section className="relative flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <TenantVerifyOtpForm />
+        <div className="flex w-full max-w-md flex-col items-center justify-center gap-5 sm:gap-6">
+          <AdminSignInForm />
+        </div>
       </section>
     </div>
   );

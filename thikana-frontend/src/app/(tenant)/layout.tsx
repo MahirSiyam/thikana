@@ -1,3 +1,4 @@
+import { RoleGuard } from "@/lib/auth/RoleGuard";
 import { TenantShell } from "@/features/tenant/components/TenantShell";
 
 export default function TenantLayout({
@@ -5,5 +6,9 @@ export default function TenantLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <TenantShell>{children}</TenantShell>;
+  return (
+    <RoleGuard allowedRoles={["tenant"]}>
+      <TenantShell>{children}</TenantShell>
+    </RoleGuard>
+  );
 }

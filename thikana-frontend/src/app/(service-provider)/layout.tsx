@@ -1,3 +1,4 @@
+import { RoleGuard } from "@/lib/auth/RoleGuard";
 import { ServiceProviderShell } from "@/features/service-provider/components/ServiceProviderShell";
 
 export default function ServiceProviderLayout({
@@ -5,5 +6,9 @@ export default function ServiceProviderLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <ServiceProviderShell>{children}</ServiceProviderShell>;
+  return (
+    <RoleGuard allowedRoles={["service_provider"]}>
+      <ServiceProviderShell>{children}</ServiceProviderShell>
+    </RoleGuard>
+  );
 }

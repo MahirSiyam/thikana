@@ -10,6 +10,8 @@ import {
 } from "next/font/google";
 import { siteDescription, siteName } from "@/config/site";
 import { SiteLoaderProvider } from "@/components/loading/site-loader-provider";
+import { AdminAuthProvider } from "@/lib/auth/AdminAuthProvider";
+import { AuthProvider } from "@/lib/auth/AuthProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -65,9 +67,14 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${plusJakartaSans.variable} ${outfit.variable} ${anton.variable} ${instrumentSerif.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
-        <SiteLoaderProvider>{children}</SiteLoaderProvider>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <AuthProvider>
+          <AdminAuthProvider>
+            <SiteLoaderProvider>{children}</SiteLoaderProvider>
+          </AdminAuthProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -11,11 +11,18 @@ import {
 } from "@/features/signup/data/signup.mock";
 import type { SignupRoleId } from "@/features/signup/types/signup.types";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
+import { useSignupWizard, type SignupRole } from "@/features/signup/context/SignupWizardProvider";
 
 const roleRoutes: Partial<Record<SignupRoleId, string>> = {
   tenant: routes.signUpTenant,
   "property-owner": routes.signUpOwner,
   "service-provider": routes.signUpServiceProvider,
+};
+
+const toApiRole = (roleId: SignupRoleId): SignupRole => {
+  if (roleId === "property-owner") return "owner";
+  if (roleId === "service-provider") return "service_provider";
+  return "tenant";
 };
 
 type SignupRoleStepProps = {
@@ -24,10 +31,12 @@ type SignupRoleStepProps = {
 
 export function SignupRoleStep({ initialRole = "tenant" }: SignupRoleStepProps) {
   const router = useRouter();
+  const { setRole } = useSignupWizard();
   const [selectedRole, setSelectedRole] = useState<SignupRoleId>(initialRole);
 
   const handleSelectRole = (roleId: SignupRoleId) => {
     setSelectedRole(roleId);
+    setRole(toApiRole(roleId));
     const nextRoute = roleRoutes[roleId];
     if (nextRoute) {
       router.push(nextRoute);
@@ -35,6 +44,7 @@ export function SignupRoleStep({ initialRole = "tenant" }: SignupRoleStepProps) 
   };
 
   const handleContinue = () => {
+    setRole(toApiRole(selectedRole));
     if (selectedRole === "tenant") {
       router.push(routes.signUpTenantForm);
       return;

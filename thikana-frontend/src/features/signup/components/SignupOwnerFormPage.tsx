@@ -29,7 +29,8 @@ export function SignupOwnerFormPage() {
       <section className="relative flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <TenantBasicInfoForm
           backHref={routes.signUpOwner}
-          nextHref={routes.signUpOwnerVerifyNumber}
+          nextHref={routes.signUpOwnerVerifyIdentity}
+          role="owner"
         />
       </section>
     </div>

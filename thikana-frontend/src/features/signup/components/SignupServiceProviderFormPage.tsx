@@ -29,7 +29,8 @@ export function SignupServiceProviderFormPage() {
       <section className="relative flex flex-1 flex-col items-center justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <TenantBasicInfoForm
           backHref={routes.signUpServiceProvider}
-          nextHref={routes.signUpServiceProviderVerifyNumber}
+          nextHref={routes.signUpServiceProviderVerifyIdentity}
+          role="service_provider"
         />
       </section>
     </div>

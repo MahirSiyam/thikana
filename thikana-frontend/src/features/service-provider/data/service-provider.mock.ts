@@ -6,6 +6,12 @@ import type {
 
 export const serviceProviderNavItems: ServiceProviderNavItem[] = [
   {
+    id: "home",
+    label: "Home",
+    iconSrc: "/images/admin/icon-home.svg",
+    href: routes.home,
+  },
+  {
     id: "overview",
     label: "Overview",
     iconSrc: "/images/service-provider/icon-zap.svg",

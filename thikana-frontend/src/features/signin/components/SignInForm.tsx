@@ -3,10 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
+import { getMe } from "@/lib/api/auth";
 import { auth } from "@/lib/firebase/firebase";
+import { resolvePostLoginRoute } from "@/lib/auth/resolve-post-login-route";
 
 function firebaseSigninErrorMessage(error: unknown): string {
   const code = (error as { code?: string })?.code;
@@ -39,11 +41,19 @@ export function SignInForm() {
       await credential.user.reload();
 
       if (!credential.user.emailVerified) {
-        router.push(`${routes.verifyEmail}?next=${encodeURIComponent(routes.home)}`);
+        router.push(
+          `${routes.verifyEmail}?next=${encodeURIComponent(routes.pendingApproval)}`
+        );
         return;
       }
 
-      router.push(routes.home);
+      const me = await getMe("user");
+      if (me.role === "admin") {
+        await signOut(auth);
+        setError("Admin accounts must sign in at the admin portal.");
+        return;
+      }
+      router.push(resolvePostLoginRoute(me));
     } catch (err) {
       setError(firebaseSigninErrorMessage(err));
     } finally {
@@ -143,42 +153,20 @@ export function SignInForm() {
           </p>
         )}
 
-        <div className="flex flex-col gap-2">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-dark font-inter text-base font-bold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? "Signing in..." : "Login"}
-            <Image
-              src="/images/signin/icon-arrow-right.svg"
-              alt=""
-              width={18}
-              height={18}
-              aria-hidden="true"
-            />
-          </button>
-
-          <div className="flex items-center gap-3">
-            <span className="h-px flex-1 bg-brand-dark/20" aria-hidden="true" />
-            <span className="font-inter text-[13px] text-brand-dark">or</span>
-            <span className="h-px flex-1 bg-brand-dark/20" aria-hidden="true" />
-          </div>
-
-          <button
-            type="button"
-            className="inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border-[1.5px] border-brand-dark font-inter text-base font-semibold text-brand-dark transition-colors hover:bg-brand-dark/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-          >
-            <Image
-              src="/images/signin/icon-smartphone.svg"
-              alt=""
-              width={18}
-              height={18}
-              aria-hidden="true"
-            />
-            Continue with Google
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-dark font-inter text-base font-bold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSubmitting ? "Signing in..." : "Login"}
+          <Image
+            src="/images/signin/icon-arrow-right.svg"
+            alt=""
+            width={18}
+            height={18}
+            aria-hidden="true"
+          />
+        </button>
       </form>
 
       <p className="mt-4 text-center font-inter text-sm text-brand-dark">

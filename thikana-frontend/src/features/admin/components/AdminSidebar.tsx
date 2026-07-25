@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { adminNavItems, adminUser } from "@/features/admin/data/admin.mock";
+import { adminNavItems } from "@/features/admin/data/admin.mock";
+import { useAdminAuth } from "@/lib/auth/AdminAuthProvider";
+import { useDashboardSignOut } from "@/lib/auth/use-dashboard-sign-out";
 
 type AdminSidebarProps = {
   mobileOpen?: boolean;
@@ -22,8 +24,22 @@ function ThikanaAdminWordmark() {
   );
 }
 
+function initialsFrom(name?: string | null, email?: string | null) {
+  const source = (name || email || "A").trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return source.slice(0, 2).toUpperCase();
+}
+
 export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { profile } = useAdminAuth();
+  const { signingOut, signOutUser } = useDashboardSignOut({ scope: "admin" });
+
+  const displayName = profile?.fullName || profile?.email || "Admin";
+  const initials = initialsFrom(profile?.fullName, profile?.email);
 
   return (
     <>
@@ -93,25 +109,34 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
           </nav>
         </div>
 
-        <div className="mt-auto flex flex-col gap-2 pt-10">
+        <div className="mt-auto flex flex-col gap-3 pt-10">
           <span className="w-fit rounded bg-[#ef4444] px-2.5 py-1 font-inter text-[10px] font-bold uppercase text-white">
-            {adminUser.badge}
+            Admin
           </span>
           <div className="flex items-center gap-3">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white">
               <span className="font-inter text-sm font-semibold text-black">
-                {adminUser.initials}
+                {initials}
               </span>
             </div>
             <div className="min-w-0">
               <p className="truncate font-inter text-sm font-semibold text-white">
-                {adminUser.name}
+                {displayName}
               </p>
-              <p className="truncate font-inter text-[11px] text-white">
-                {adminUser.role}
-              </p>
+              <p className="truncate font-inter text-[11px] text-white">Super Admin</p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              onClose?.();
+              void signOutUser();
+            }}
+            disabled={signingOut}
+            className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/30 font-inter text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {signingOut ? "Signing out…" : "Sign out"}
+          </button>
         </div>
       </aside>
     </>

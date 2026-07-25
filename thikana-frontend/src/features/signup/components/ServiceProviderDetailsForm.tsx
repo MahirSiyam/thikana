@@ -5,29 +5,44 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useId,
+  useRef,
   useState,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
 import { routes } from "@/config/routes";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
+import { useSignupWizard } from "@/features/signup/context/SignupWizardProvider";
 import {
   serviceCategoryOptions,
   serviceProviderDetailsCopy,
 } from "@/features/signup/data/signup.mock";
 import type { ServiceCategoryId } from "@/features/signup/types/signup.types";
+import { registerAccount } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
+import { uploadToCloudinary } from "@/lib/api/uploads";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 const BIO_MAX = serviceProviderDetailsCopy.bioMaxLength;
 
 export function ServiceProviderDetailsForm() {
   const router = useRouter();
   const formId = useId();
+  const { setProfileData, buildRegistrationPayload, clear } = useSignupWizard();
+  const { refreshProfile } = useAuth();
   const [category, setCategory] = useState<ServiceCategoryId>("electrician");
   const [experience, setExperience] = useState("");
   const [areas, setAreas] = useState<string[]>(["Dhanmondi", "Mohammadpur"]);
   const [areaDraft, setAreaDraft] = useState("");
   const [certificateName, setCertificateName] = useState<string | undefined>();
+  const [tradeCertificate, setTradeCertificate] = useState<
+    Awaited<ReturnType<typeof uploadToCloudinary>> | undefined
+  >();
+  const [uploadingCertificate, setUploadingCertificate] = useState(false);
   const [bio, setBio] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const certificateInputRef = useRef<HTMLInputElement>(null);
 
   const addArea = () => {
     const next = areaDraft.trim();
@@ -43,8 +58,35 @@ export function ServiceProviderDetailsForm() {
     }
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (uploadingCertificate) return;
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const profileData = {
+        serviceCategory: category,
+        yearsOfExperience: experience.trim() || undefined,
+        serviceAreas: areas,
+        tradeCertificate,
+        bio: bio.trim() || undefined,
+      };
+      setProfileData(profileData);
+      const payload = buildRegistrationPayload();
+      payload.profileData = profileData;
+      await registerAccount(payload);
+      clear();
+      await refreshProfile().catch(() => null);
+      router.replace(routes.pendingApproval);
+    } catch (err) {
+      setError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Could not complete registration"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -155,12 +197,26 @@ export function ServiceProviderDetailsForm() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="font-inter text-[13px] font-semibold text-black">
-              {serviceProviderDetailsCopy.certificateLabel}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-inter text-[13px] font-semibold text-black">
+                {serviceProviderDetailsCopy.certificateLabel}
+              </p>
+              {tradeCertificate && !uploadingCertificate ? (
+                <span className="font-inter text-[11px] font-semibold text-emerald-700">
+                  Uploaded
+                </span>
+              ) : null}
+            </div>
             <label
               htmlFor={`${formId}-certificate`}
-              className="flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-[#ccccca] bg-[#fafafa] px-3 py-3 text-center transition-colors hover:border-brand-dark/50"
+              aria-disabled={uploadingCertificate}
+              className={`flex min-h-[72px] flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed px-3 py-3 text-center transition-colors ${
+                uploadingCertificate
+                  ? "cursor-wait border-brand-dark/40 bg-[#f7f7f5]"
+                  : tradeCertificate
+                    ? "cursor-pointer border-emerald-300 bg-emerald-50/40 hover:border-emerald-500"
+                    : "cursor-pointer border-[#ccccca] bg-[#fafafa] hover:border-brand-dark/50"
+              }`}
             >
               <Image
                 src="/images/signup/icon-file.svg"
@@ -171,19 +227,65 @@ export function ServiceProviderDetailsForm() {
                 className="size-6"
               />
               <span className="font-inter text-[13px] font-semibold text-[#161616]">
-                {serviceProviderDetailsCopy.certificateTitle}
+                {uploadingCertificate
+                  ? "Uploading..."
+                  : tradeCertificate
+                    ? certificateName || "Uploaded — click to replace"
+                    : serviceProviderDetailsCopy.certificateTitle}
               </span>
               <span className="font-inter text-xs text-brand-dark/50">
-                {certificateName ?? serviceProviderDetailsCopy.certificateHint}
+                {uploadingCertificate
+                  ? "Please wait"
+                  : tradeCertificate
+                    ? certificateName
+                    : serviceProviderDetailsCopy.certificateHint}
               </span>
               <input
                 id={`${formId}-certificate`}
+                ref={certificateInputRef}
                 type="file"
-                accept="image/*,.pdf"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
                 className="sr-only"
-                onChange={(event) => {
+                disabled={uploadingCertificate}
+                onChange={async (event) => {
                   const file = event.target.files?.[0];
-                  setCertificateName(file ? file.name : undefined);
+                  if (!file) return;
+
+                  const isPdf = file.type === "application/pdf";
+                  const isImage = file.type.startsWith("image/");
+                  if (!isPdf && !isImage) {
+                    setError("Please upload an image or PDF file.");
+                    return;
+                  }
+                  if (file.size > 8 * 1024 * 1024) {
+                    setError("File must be under 8MB.");
+                    return;
+                  }
+
+                  setError(null);
+                  setUploadingCertificate(true);
+                  setCertificateName(file.name);
+                  try {
+                    const uploaded = await uploadToCloudinary({
+                      file,
+                      folder: "provider/trade-certificate",
+                      resourceType: isPdf ? "raw" : "image",
+                    });
+                    setTradeCertificate(uploaded);
+                  } catch (err) {
+                    setCertificateName(undefined);
+                    setTradeCertificate(undefined);
+                    setError(
+                      err instanceof Error
+                        ? err.message
+                        : "Could not upload certificate"
+                    );
+                  } finally {
+                    setUploadingCertificate(false);
+                    if (certificateInputRef.current) {
+                      certificateInputRef.current.value = "";
+                    }
+                  }
                 }}
               />
             </label>
@@ -213,11 +315,18 @@ export function ServiceProviderDetailsForm() {
           </div>
         </div>
 
+        {error ? (
+          <p role="alert" className="font-inter text-sm font-medium text-red-600">
+            {error}
+          </p>
+        ) : null}
+
         <button
           type="submit"
-          className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          disabled={isSubmitting || uploadingCertificate}
+          className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {serviceProviderDetailsCopy.submitLabel}
+          {isSubmitting ? "Submitting…" : serviceProviderDetailsCopy.submitLabel}
         </button>
       </form>
 

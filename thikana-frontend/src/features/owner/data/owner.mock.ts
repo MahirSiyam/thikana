@@ -3,9 +3,15 @@ import type { OwnerNavItem, OwnerUser } from "@/features/owner/types/owner.types
 
 export const ownerNavItems: OwnerNavItem[] = [
   {
+    id: "home",
+    label: "Home",
+    iconSrc: "/images/owner/icon-home.svg",
+    href: routes.home,
+  },
+  {
     id: "overview",
     label: "Overview",
-    iconSrc: "/images/owner/icon-home.svg",
+    iconSrc: "/images/owner/icon-building.svg",
     href: routes.ownerOverview,
   },
   {

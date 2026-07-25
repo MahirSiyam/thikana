@@ -1,24 +1,28 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useId, useState } from "react";
+import { routes } from "@/config/routes";
 import {
-  areas,
+  amenityOptions,
   defaultListingForm,
-  districts,
   divisions,
   listingSteps,
   propertyTypes,
   stepContinueLabels,
-  stepPlaceholderCopy,
   whoCanRentOptions,
 } from "@/features/owner-add-new-listing/data/owner-add-new-listing.mock";
 import type {
   ListingFormState,
+  ListingMediaItem,
   PropertyType,
   WhoCanRent,
 } from "@/features/owner-add-new-listing/types/owner-add-new-listing.types";
-import { ownerUser } from "@/features/owner/data/owner.mock";
+import { createListing } from "@/lib/api/listings";
+import { ApiError } from "@/lib/api/client";
+import { uploadToCloudinary } from "@/lib/api/uploads";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 function ListingStepper({ activeStep }: { activeStep: number }) {
   return (
@@ -169,20 +173,28 @@ function PropertyInfoStep({
           options={divisions}
           onChange={(value) => onChange("division", value)}
         />
-        <SelectField
-          id="district"
-          label="District"
-          value={form.district}
-          options={districts}
-          onChange={(value) => onChange("district", value)}
-        />
-        <SelectField
-          id="area"
-          label="Area"
-          value={form.area}
-          options={areas}
-          onChange={(value) => onChange("area", value)}
-        />
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <FieldLabel htmlFor="district">District</FieldLabel>
+          <input
+            id="district"
+            type="text"
+            value={form.district}
+            onChange={(event) => onChange("district", event.target.value)}
+            placeholder="e.g. Dhaka"
+            className="h-11 w-full rounded-lg border border-[#e5e5e2] px-4 font-inter text-sm text-brand-dark outline-none placeholder:text-[#9ca3af] focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <FieldLabel htmlFor="area">Area</FieldLabel>
+          <input
+            id="area"
+            type="text"
+            value={form.area}
+            onChange={(event) => onChange("area", event.target.value)}
+            placeholder="e.g. Dhanmondi"
+            className="h-11 w-full rounded-lg border border-[#e5e5e2] px-4 font-inter text-sm text-brand-dark outline-none placeholder:text-[#9ca3af] focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -263,21 +275,270 @@ function PropertyInfoStep({
   );
 }
 
-function StepPlaceholder({ stepId }: { stepId: number }) {
-  const copy = stepPlaceholderCopy[stepId];
-  if (!copy) return null;
+function MediaStep({
+  images,
+  uploading,
+  onUpload,
+  onRemove,
+}: {
+  images: ListingMediaItem[];
+  uploading: boolean;
+  onUpload: (files: FileList | null) => void;
+  onRemove: (publicId: string) => void;
+}) {
+  const inputId = useId();
 
   return (
-    <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#e5e5e2] bg-[#fafaf9] px-6 py-12 text-center">
-      <p className="font-inter text-base font-bold text-brand-dark">{copy.title}</p>
-      <p className="max-w-md font-inter text-sm text-[#6b7280]">{copy.description}</p>
+    <div className="flex flex-col gap-5">
+      <div>
+        <h2 className="font-inter text-base font-bold text-brand-dark">Photos & media</h2>
+        <p className="mt-1 font-inter text-sm text-[#6b7280]">
+          Upload clear photos of the property. The first image becomes the cover photo.
+        </p>
+      </div>
+
+      <label
+        htmlFor={inputId}
+        className={`flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-[#ccccca] bg-[#fafafa] px-4 py-8 text-center transition-colors hover:border-brand-dark/50 ${
+          uploading ? "pointer-events-none opacity-60" : ""
+        }`}
+      >
+        <Image
+          src="/images/signup/icon-cloud-upload.svg"
+          alt=""
+          width={28}
+          height={28}
+          aria-hidden="true"
+        />
+        <span className="font-inter text-sm font-semibold text-brand-dark">
+          {uploading ? "Uploading…" : "Drag & drop or click to upload"}
+        </span>
+        <span className="font-inter text-xs text-[#6b7280]">
+          JPG, PNG up to 10 images
+        </span>
+        <input
+          id={inputId}
+          type="file"
+          accept="image/*"
+          multiple
+          className="sr-only"
+          disabled={uploading}
+          onChange={(event) => {
+            onUpload(event.target.files);
+            event.target.value = "";
+          }}
+        />
+      </label>
+
+      {images.length > 0 ? (
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {images.map((image, index) => {
+            const src = image.previewUrl || image.secureUrl || "";
+            return (
+              <li
+                key={image.publicId}
+                className="relative aspect-square overflow-hidden rounded-lg border border-[#e5e5e2] bg-[#f5f5f3]"
+              >
+                {src ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={src} alt="" className="size-full object-cover" />
+                ) : null}
+                {index === 0 ? (
+                  <span className="absolute top-2 left-2 rounded bg-brand-dark px-2 py-0.5 font-inter text-[10px] font-semibold text-white">
+                    Cover
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => onRemove(image.publicId)}
+                  className="absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-full bg-black/70 font-inter text-xs font-bold text-white"
+                  aria-label="Remove photo"
+                >
+                  ×
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 }
 
+function DetailsStep({
+  form,
+  onChange,
+  onAmenityToggle,
+}: {
+  form: ListingFormState;
+  onChange: (field: keyof ListingFormState, value: string) => void;
+  onAmenityToggle: (amenity: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="font-inter text-base font-bold text-brand-dark">Property details</h2>
+        <p className="mt-1 font-inter text-sm text-[#6b7280]">
+          Add amenities, house rules, and extra details tenants should know.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <FieldLabel htmlFor="beds">Bedrooms</FieldLabel>
+          <input
+            id="beds"
+            type="text"
+            inputMode="numeric"
+            value={form.beds}
+            onChange={(event) => onChange("beds", event.target.value)}
+            className="h-11 w-full rounded-lg border border-[#e5e5e2] px-4 font-inter text-sm text-brand-dark outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <FieldLabel htmlFor="baths">Bathrooms</FieldLabel>
+          <input
+            id="baths"
+            type="text"
+            inputMode="numeric"
+            value={form.baths}
+            onChange={(event) => onChange("baths", event.target.value)}
+            className="h-11 w-full rounded-lg border border-[#e5e5e2] px-4 font-inter text-sm text-brand-dark outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <FieldLabel>Amenities</FieldLabel>
+        <div className="flex flex-wrap gap-2">
+          {amenityOptions.map((amenity) => {
+            const selected = form.amenities.includes(amenity);
+            return (
+              <button
+                key={amenity}
+                type="button"
+                onClick={() => onAmenityToggle(amenity)}
+                className={`rounded-full px-4 py-2 font-inter text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
+                  selected
+                    ? "bg-brand-dark text-white"
+                    : "border border-[#e5e5e2] bg-white text-brand-dark"
+                }`}
+              >
+                {amenity}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <FieldLabel htmlFor="description">Description</FieldLabel>
+        <textarea
+          id="description"
+          value={form.description}
+          onChange={(event) => onChange("description", event.target.value)}
+          rows={5}
+          placeholder="Describe the property, nearby landmarks, and what makes it special..."
+          className="w-full resize-y rounded-lg border border-[#e5e5e2] px-4 py-3 font-inter text-sm text-brand-dark outline-none placeholder:text-[#9ca3af] focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <FieldLabel htmlFor="house-rules">House rules</FieldLabel>
+        <textarea
+          id="house-rules"
+          value={form.houseRules}
+          onChange={(event) => onChange("houseRules", event.target.value)}
+          rows={4}
+          placeholder="e.g. No smoking, guests allowed until 10 PM, pets not allowed..."
+          className="w-full resize-y rounded-lg border border-[#e5e5e2] px-4 py-3 font-inter text-sm text-brand-dark outline-none placeholder:text-[#9ca3af] focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+        />
+      </div>
+    </div>
+  );
+}
+
+function ReviewStep({ form }: { form: ListingFormState }) {
+  const cover = form.images[0]?.previewUrl || form.images[0]?.secureUrl;
+
+  return (
+    <div className="flex min-h-[280px] flex-col gap-4 rounded-xl border border-[#e5e5e2] bg-[#fafaf9] px-6 py-8">
+      <p className="font-inter text-base font-bold text-brand-dark">Review your listing</p>
+      <div className="flex flex-col gap-4 sm:flex-row">
+        {cover ? (
+          <div className="relative size-28 shrink-0 overflow-hidden rounded-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={cover} alt="" className="size-full object-cover" />
+          </div>
+        ) : null}
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <p className="font-inter text-sm font-semibold text-brand-dark">
+            {form.propertyTitle || "Untitled"}
+          </p>
+          <p className="font-inter text-sm text-[#6b7280]">
+            {form.propertyType} · {form.area || "Area"}, {form.district || "District"} ·{" "}
+            {form.division}
+          </p>
+          <p className="font-inter text-sm text-brand-dark">
+            Monthly rent: BDT {form.monthlyRent || "0"}
+          </p>
+          <p className="font-inter text-sm text-[#6b7280]">
+            {form.beds || "0"} bed · {form.baths || "0"} bath · {form.images.length} photo
+            {form.images.length === 1 ? "" : "s"}
+          </p>
+          {form.amenities.length > 0 ? (
+            <p className="font-inter text-sm text-[#6b7280]">
+              Amenities: {form.amenities.join(", ")}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <p className="font-inter text-sm text-[#6b7280]">
+        Submit sends this listing to admin verification. Save as Draft keeps it private.
+      </p>
+    </div>
+  );
+}
+
+function parseMoney(value: string): number {
+  const digits = value.replace(/[^\d]/g, "");
+  return Number(digits || "0");
+}
+
+function buildPayload(form: ListingFormState, submitForReview: boolean) {
+  const images = form.images.map(({ previewUrl: _preview, ...asset }) => asset);
+  return {
+    title: form.propertyTitle.trim(),
+    propertyType: form.propertyType,
+    description: form.description.trim() || undefined,
+    houseRules: form.houseRules.trim() || undefined,
+    address: {
+      division: form.division,
+      district: form.district.trim(),
+      area: form.area.trim(),
+    },
+    floorLevel: form.floorLevel.trim() || undefined,
+    sizeSqft: Number(form.sizeSqft.replace(/[^\d]/g, "") || "0"),
+    beds: Number(form.beds.replace(/[^\d]/g, "") || "1"),
+    baths: Number(form.baths.replace(/[^\d]/g, "") || "1"),
+    monthlyRent: parseMoney(form.monthlyRent),
+    availableFrom: form.availableFrom || null,
+    whoCanRent: form.whoCanRent,
+    amenities: form.amenities,
+    images,
+    coverImageUrl: form.images[0]?.secureUrl || undefined,
+    submitForReview,
+  };
+}
+
 export function OwnerAddNewListingPage() {
+  const router = useRouter();
+  const { profile } = useAuth();
   const [activeStep, setActiveStep] = useState(1);
   const [form, setForm] = useState<ListingFormState>(defaultListingForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function handleFieldChange(field: keyof ListingFormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -297,14 +558,112 @@ export function OwnerAddNewListingPage() {
     });
   }
 
-  function handleContinue() {
-    if (activeStep < listingSteps.length) {
-      setActiveStep((current) => current + 1);
+  function handleAmenityToggle(amenity: string) {
+    setForm((current) => {
+      const selected = current.amenities.includes(amenity);
+      return {
+        ...current,
+        amenities: selected
+          ? current.amenities.filter((item) => item !== amenity)
+          : [...current.amenities, amenity],
+      };
+    });
+  }
+
+  async function handleUpload(files: FileList | null) {
+    if (!files?.length) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const remaining = Math.max(0, 10 - form.images.length);
+      const selected = Array.from(files).slice(0, remaining);
+      const uploaded: ListingMediaItem[] = [];
+
+      for (const file of selected) {
+        const asset = await uploadToCloudinary({
+          file,
+          folder: "listings/photos",
+          resourceType: "image",
+        });
+        uploaded.push({
+          ...asset,
+          previewUrl: asset.secureUrl || URL.createObjectURL(file),
+        });
+      }
+
+      setForm((current) => ({
+        ...current,
+        images: [...current.images, ...uploaded],
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not upload photos");
+    } finally {
+      setUploading(false);
     }
   }
 
+  function handleRemoveImage(publicId: string) {
+    setForm((current) => ({
+      ...current,
+      images: current.images.filter((image) => image.publicId !== publicId),
+    }));
+  }
+
+  async function persist(submitForReview: boolean) {
+    setError(null);
+    if (!form.propertyTitle.trim()) {
+      setError("Property title is required.");
+      setActiveStep(1);
+      return;
+    }
+    if (!form.district.trim() || !form.area.trim()) {
+      setError("District and area are required.");
+      setActiveStep(1);
+      return;
+    }
+    if (!form.whoCanRent.length) {
+      setError("Select at least one renter type.");
+      setActiveStep(1);
+      return;
+    }
+    if (submitForReview && form.images.length === 0) {
+      setError("Add at least one photo before submitting for review.");
+      setActiveStep(2);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createListing(buildPayload(form, submitForReview));
+      router.push(routes.ownerMyListings);
+    } catch (err) {
+      setError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Could not save listing"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleContinue() {
+    if (activeStep === 1) {
+      if (!form.propertyTitle.trim() || !form.district.trim() || !form.area.trim()) {
+        setError("Fill in title, district, and area before continuing.");
+        return;
+      }
+    }
+    setError(null);
+    if (activeStep < listingSteps.length) {
+      setActiveStep((current) => current + 1);
+      return;
+    }
+    void persist(true);
+  }
+
   function handleSaveDraft() {
-    // Local-only draft save — no API
+    void persist(false);
   }
 
   return (
@@ -362,14 +721,8 @@ export function OwnerAddNewListingPage() {
                 className="size-5"
               />
             </button>
-            <div className="relative size-9 overflow-hidden rounded-full">
-              <Image
-                src={ownerUser.topbarAvatarSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="36px"
-              />
+            <div className="flex size-9 items-center justify-center rounded-full bg-[#f5f5f3] font-inter text-xs font-bold text-brand-dark">
+              {(profile?.fullName || "O").slice(0, 1).toUpperCase()}
             </div>
           </div>
         </header>
@@ -384,25 +737,64 @@ export function OwnerAddNewListingPage() {
               onPropertyTypeChange={handlePropertyTypeChange}
               onWhoCanRentToggle={handleWhoCanRentToggle}
             />
-          ) : (
-            <StepPlaceholder stepId={activeStep} />
-          )}
+          ) : null}
+          {activeStep === 2 ? (
+            <MediaStep
+              images={form.images}
+              uploading={uploading}
+              onUpload={(files) => void handleUpload(files)}
+              onRemove={handleRemoveImage}
+            />
+          ) : null}
+          {activeStep === 3 ? (
+            <DetailsStep
+              form={form}
+              onChange={handleFieldChange}
+              onAmenityToggle={handleAmenityToggle}
+            />
+          ) : null}
+          {activeStep === 4 ? <ReviewStep form={form} /> : null}
 
-          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-[#e5e5e2] pt-6 sm:flex-row sm:items-center sm:justify-end">
+          {error ? (
+            <p role="alert" className="mt-4 font-inter text-sm font-medium text-red-600">
+              {error}
+            </p>
+          ) : null}
+
+          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-[#e5e5e2] pt-6 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
-              onClick={handleSaveDraft}
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-brand-dark px-6 font-inter text-sm font-semibold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+              disabled={isSubmitting || activeStep === 1}
+              onClick={() => {
+                setError(null);
+                setActiveStep((current) => Math.max(1, current - 1));
+              }}
+              className="inline-flex h-11 items-center justify-center rounded-lg px-4 font-inter text-sm font-semibold text-brand-dark/70 disabled:opacity-40"
             >
-              Save as Draft
+              ← Back
             </button>
-            <button
-              type="button"
-              onClick={handleContinue}
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-brand-dark px-6 font-inter text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-            >
-              {stepContinueLabels[activeStep]}
-            </button>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                disabled={isSubmitting || uploading}
+                onClick={handleSaveDraft}
+                className="inline-flex h-11 items-center justify-center rounded-lg border border-brand-dark px-6 font-inter text-sm font-semibold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:opacity-60"
+              >
+                {isSubmitting ? "Saving…" : "Save as Draft"}
+              </button>
+              <button
+                type="button"
+                disabled={isSubmitting || uploading}
+                onClick={handleContinue}
+                className="inline-flex h-11 items-center justify-center rounded-lg bg-brand-dark px-6 font-inter text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:opacity-60"
+              >
+                {isSubmitting
+                  ? "Submitting…"
+                  : activeStep === listingSteps.length
+                    ? "Submit Listing"
+                    : stepContinueLabels[activeStep]}
+              </button>
+            </div>
           </div>
         </section>
       </div>

@@ -3,6 +3,12 @@ import type { AdminNavItem, AdminUser } from "@/features/admin/types/admin.types
 
 export const adminNavItems: AdminNavItem[] = [
   {
+    id: "home",
+    label: "Home",
+    iconSrc: "/images/admin/icon-home.svg",
+    href: routes.home,
+  },
+  {
     id: "overview",
     label: "Overview",
     iconSrc: "/images/admin/icon-layout-grid.svg",
