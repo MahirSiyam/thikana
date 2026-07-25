@@ -1,3 +1,5 @@
+import type { CloudinaryAsset } from "@/lib/api/auth";
+
 export type PropertyType = "Apartment" | "Room" | "Mess / Hostel" | "Office Space";
 
 export type WhoCanRent = "Family" | "Bachelor" | "Any";
@@ -12,6 +14,11 @@ export type LocationOption = {
   label: string;
 };
 
+export type ListingMediaItem = CloudinaryAsset & {
+  secureUrl?: string;
+  previewUrl?: string;
+};
+
 export type ListingFormState = {
   propertyTitle: string;
   propertyType: PropertyType;
@@ -23,4 +30,10 @@ export type ListingFormState = {
   monthlyRent: string;
   availableFrom: string;
   whoCanRent: WhoCanRent[];
+  images: ListingMediaItem[];
+  description: string;
+  houseRules: string;
+  amenities: string[];
+  beds: string;
+  baths: string;
 };

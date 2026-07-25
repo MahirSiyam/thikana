@@ -3,25 +3,174 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
+import { useSignupWizard } from "@/features/signup/context/SignupWizardProvider";
 import {
   ownerContactMethodOptions,
   ownerDetailsCopy,
 } from "@/features/signup/data/signup.mock";
 import type { OwnerContactMethodId } from "@/features/signup/types/signup.types";
+import { registerAccount, type CloudinaryAsset } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
+import { uploadToCloudinary } from "@/lib/api/uploads";
+import { useAuth } from "@/lib/auth/AuthProvider";
+
+function isCloudinaryAsset(value: unknown): value is CloudinaryAsset {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "publicId" in value &&
+      typeof (value as CloudinaryAsset).publicId === "string"
+  );
+}
 
 export function OwnerDetailsForm() {
   const router = useRouter();
   const formId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
+  const {
+    state,
+    hydrated,
+    setProfileData,
+    buildRegistrationPayload,
+    clear,
+  } = useSignupWizard();
+  const { refreshProfile } = useAuth();
   const [propertyCount, setPropertyCount] = useState("");
   const [proofFileName, setProofFileName] = useState<string | undefined>();
+  const [ownershipProof, setOwnershipProof] = useState<CloudinaryAsset | undefined>();
+  const [preview, setPreview] = useState<string | undefined>();
+  const [uploading, setUploading] = useState(false);
   const [contactMethod, setContactMethod] =
     useState<OwnerContactMethodId>("phone");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || restored) return;
+
+    const stored = state.profileData || {};
+    if (typeof stored.propertyCount === "string") {
+      setPropertyCount(stored.propertyCount);
+    }
+    if (
+      stored.preferredContactMethod === "phone" ||
+      stored.preferredContactMethod === "whatsapp" ||
+      stored.preferredContactMethod === "in-app"
+    ) {
+      setContactMethod(stored.preferredContactMethod);
+    }
+    if (isCloudinaryAsset(stored.ownershipProof)) {
+      setOwnershipProof(stored.ownershipProof);
+      if (stored.ownershipProof.secureUrl) {
+        setPreview(stored.ownershipProof.secureUrl);
+      }
+      setProofFileName(
+        stored.ownershipProof.format
+          ? `ownership-proof.${stored.ownershipProof.format}`
+          : "Uploaded document"
+      );
+    }
+    setRestored(true);
+  }, [hydrated, restored, state.profileData]);
+
+  const clearLocalPreview = () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+  };
+
+  const handleProofUpload = async (fileList: FileList | null) => {
+    const file = fileList?.[0];
+    if (!file) return;
+
+    const isPdf = file.type === "application/pdf";
+    const isImage = file.type.startsWith("image/");
+    if (!isPdf && !isImage) {
+      setError("Please upload an image or PDF file.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("File must be under 8MB.");
+      return;
+    }
+
+    setError(null);
+    setUploading(true);
+    setProofFileName(file.name);
+
+    clearLocalPreview();
+    if (isImage) {
+      const objectUrl = URL.createObjectURL(file);
+      previewUrlRef.current = objectUrl;
+      setPreview(objectUrl);
+    } else {
+      setPreview(undefined);
+    }
+
+    try {
+      const uploaded = await uploadToCloudinary({
+        file,
+        folder: "owner/ownership-proof",
+        resourceType: isPdf ? "raw" : "image",
+      });
+      setOwnershipProof(uploaded);
+      if (uploaded.secureUrl && isImage) {
+        clearLocalPreview();
+        setPreview(uploaded.secureUrl);
+      }
+    } catch (err) {
+      clearLocalPreview();
+      setProofFileName(undefined);
+      setOwnershipProof(undefined);
+      setPreview(undefined);
+      setError(err instanceof Error ? err.message : "Could not upload proof");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (uploading) return;
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const profileData = {
+        propertyCount: propertyCount.trim() || undefined,
+        preferredContactMethod: contactMethod,
+        ownershipProof,
+      };
+      setProfileData(profileData);
+      const payload = buildRegistrationPayload();
+      payload.profileData = profileData;
+      await registerAccount(payload);
+      clear();
+      await refreshProfile().catch(() => null);
+      router.replace(routes.pendingApproval);
+    } catch (err) {
+      setError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Could not complete registration"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -69,36 +218,64 @@ export function OwnerDetailsForm() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="font-inter text-[13px] font-semibold text-black">
-              {ownerDetailsCopy.proofLabel}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-inter text-[13px] font-semibold text-[#161616]">
+                {ownerDetailsCopy.proofLabel}
+              </p>
+              {ownershipProof && !uploading ? (
+                <span className="font-inter text-[11px] font-semibold text-emerald-700">
+                  Uploaded
+                </span>
+              ) : null}
+            </div>
             <label
               htmlFor={`${formId}-proof`}
-              className="flex min-h-[90px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-[#ccccca] bg-[#fafafa] px-3 py-3 text-center transition-colors hover:border-brand-dark/50"
+              aria-disabled={uploading}
+              className={`relative flex min-h-[110px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[10px] border-[1.5px] border-dashed px-3 py-3 text-center transition-colors ${
+                uploading
+                  ? "cursor-wait border-brand-dark/40 bg-[#f7f7f5]"
+                  : ownershipProof
+                    ? "cursor-pointer border-emerald-300 bg-emerald-50/40 hover:border-emerald-500"
+                    : "cursor-pointer border-[#ccccca] bg-[#fafafa] hover:border-brand-dark/50"
+              }`}
             >
-              <Image
-                src="/images/signup/icon-cloud-upload.svg"
-                alt=""
-                width={24}
-                height={24}
-                aria-hidden="true"
-                className="size-6"
-              />
-              <span className="font-inter text-[13px] font-semibold text-[#161616]">
-                {ownerDetailsCopy.proofTitle}
-              </span>
-              <span className="font-inter text-xs text-brand-dark/50">
-                {proofFileName ?? ownerDetailsCopy.proofHint}
-              </span>
+              {preview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={preview}
+                  alt=""
+                  className="absolute inset-0 size-full object-cover opacity-35"
+                />
+              ) : null}
+              <div className="relative z-10 flex flex-col items-center gap-1">
+                <Image
+                  src="/images/signup/icon-cloud-upload.svg"
+                  alt=""
+                  width={22}
+                  height={22}
+                  aria-hidden="true"
+                />
+                <span className="font-inter text-sm font-medium text-brand-dark">
+                  {uploading
+                    ? "Uploading..."
+                    : ownershipProof
+                      ? proofFileName || "Uploaded — click to replace"
+                      : ownerDetailsCopy.proofTitle}
+                </span>
+                {!ownershipProof && !uploading ? (
+                  <span className="font-inter text-xs text-brand-dark/50">
+                    {ownerDetailsCopy.proofHint}
+                  </span>
+                ) : null}
+              </div>
               <input
                 id={`${formId}-proof`}
+                ref={fileInputRef}
                 type="file"
-                accept="image/*,.pdf"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
                 className="sr-only"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  setProofFileName(file ? file.name : undefined);
-                }}
+                disabled={uploading}
+                onChange={(event) => void handleProofUpload(event.target.files)}
               />
             </label>
           </div>
@@ -130,11 +307,18 @@ export function OwnerDetailsForm() {
           </fieldset>
         </div>
 
+        {error ? (
+          <p role="alert" className="font-inter text-sm font-medium text-red-600">
+            {error}
+          </p>
+        ) : null}
+
         <button
           type="submit"
-          className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          disabled={isSubmitting || uploading}
+          className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {ownerDetailsCopy.submitLabel}
+          {isSubmitting ? "Submitting…" : ownerDetailsCopy.submitLabel}
         </button>
       </form>
 

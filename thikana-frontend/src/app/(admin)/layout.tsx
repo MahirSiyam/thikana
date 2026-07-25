@@ -1,3 +1,4 @@
+import { RoleGuard } from "@/lib/auth/RoleGuard";
 import { AdminShell } from "@/features/admin/components/AdminShell";
 
 export default function AdminLayout({
@@ -5,5 +6,9 @@ export default function AdminLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <AdminShell>{children}</AdminShell>;
+  return (
+    <RoleGuard allowedRoles={["admin"]}>
+      <AdminShell>{children}</AdminShell>
+    </RoleGuard>
+  );
 }

@@ -1,22 +1,11 @@
-export type OwnerListingStatus = "Verified & Live" | "Under Review";
+export type OwnerListingStatus =
+  | "Verified & Live"
+  | "Under Review"
+  | "Draft"
+  | "Paused"
+  | "Rejected";
 
 export type OwnerStatTone = "success" | "warning" | "info";
-
-export type OwnerBookingStatus = "Pending" | "Accepted" | "Declined";
-
-export type OwnerMiniListing = {
-  id: string;
-  title: string;
-  location: string;
-  imageSrc: string;
-  status: OwnerListingStatus;
-  views: number;
-};
-
-export type OwnerWeeklyView = {
-  day: string;
-  value: number;
-};
 
 export type OwnerStatCard = {
   id: string;
@@ -27,11 +16,8 @@ export type OwnerStatCard = {
   iconSrc: string;
 };
 
-export type OwnerBookingRequest = {
+export type OwnerViewBar = {
   id: string;
-  tenantName: string;
-  tenantAvatarSrc: string;
-  property: string;
-  requestedDate: string;
-  status: OwnerBookingStatus;
+  label: string;
+  value: number;
 };

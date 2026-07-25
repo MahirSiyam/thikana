@@ -3,7 +3,7 @@ import type { SignupRoleOption, SignupStep } from "@/features/signup/types/signu
 export const signupSteps: SignupStep[] = [
   { id: "role", label: "Role" },
   { id: "basic-info", label: "Basic Info" },
-  { id: "verify-number", label: "Verify Number" },
+  { id: "verify-email", label: "Verify Email" },
   { id: "verify-identity", label: "Verify Identity" },
   { id: "details", label: "Details" },
 ];

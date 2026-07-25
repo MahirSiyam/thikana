@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { tenantNavItems, tenantUser } from "@/features/tenant/data/tenant.mock";
+import { tenantNavItems } from "@/features/tenant/data/tenant.mock";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useDashboardSignOut } from "@/lib/auth/use-dashboard-sign-out";
 
 type TenantSidebarProps = {
   mobileOpen?: boolean;
@@ -24,6 +26,9 @@ function ThikanaTenantWordmark() {
 
 export function TenantSidebar({ mobileOpen = false, onClose }: TenantSidebarProps) {
   const pathname = usePathname();
+  const { profile } = useAuth();
+  const { signingOut, signOutUser } = useDashboardSignOut({ scope: "user" });
+  const displayName = profile?.fullName || profile?.email || "Tenant";
 
   return (
     <>
@@ -93,26 +98,31 @@ export function TenantSidebar({ mobileOpen = false, onClose }: TenantSidebarProp
           </nav>
         </div>
 
-        <div className="mt-auto border-t border-[#e5e5e2] pt-4">
+        <div className="mt-auto flex flex-col gap-3 border-t border-[#e5e5e2] pt-4">
           <div className="flex items-center gap-2">
-            <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
-              <Image
-                src={tenantUser.avatarSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="48px"
-              />
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/10 font-inter text-sm font-bold text-white">
+              {displayName.slice(0, 1).toUpperCase()}
             </div>
             <div className="flex min-w-0 flex-col gap-1">
               <p className="truncate font-inter text-sm font-semibold text-white">
-                {tenantUser.name}
+                {displayName}
               </p>
               <span className="inline-flex w-fit items-center rounded-full bg-[#f3f4f6] px-2 py-1 font-inter text-[11px] font-semibold text-[#6b7280]">
-                {tenantUser.roleBadge}
+                Tenant
               </span>
             </div>
           </div>
+          <button
+            type="button"
+            disabled={signingOut}
+            onClick={() => {
+              onClose?.();
+              void signOutUser();
+            }}
+            className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/30 font-inter text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {signingOut ? "Signing out…" : "Sign out"}
+          </button>
         </div>
       </aside>
     </>

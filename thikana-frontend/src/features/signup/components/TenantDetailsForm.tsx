@@ -5,21 +5,53 @@ import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
+import { useSignupWizard } from "@/features/signup/context/SignupWizardProvider";
 import {
   tenantDetailsCopy,
   tenantLookingAsOptions,
 } from "@/features/signup/data/signup.mock";
 import type { TenantLookingAsId } from "@/features/signup/types/signup.types";
+import { registerAccount } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 export function TenantDetailsForm() {
   const router = useRouter();
   const formId = useId();
+  const { setProfileData, buildRegistrationPayload, clear } = useSignupWizard();
+  const { refreshProfile } = useAuth();
   const [lookingAs, setLookingAs] = useState<TenantLookingAsId>("family");
   const [location, setLocation] = useState("");
   const [budget, setBudget] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const profileData = {
+        lookingAs,
+        preferredLocation: location.trim() || undefined,
+        budgetRange: budget.trim() || undefined,
+      };
+      setProfileData(profileData);
+      const payload = buildRegistrationPayload();
+      payload.profileData = profileData;
+      await registerAccount(payload);
+      clear();
+      await refreshProfile().catch(() => null);
+      router.replace(routes.pendingApproval);
+    } catch (err) {
+      setError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Could not complete registration"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -110,11 +142,18 @@ export function TenantDetailsForm() {
           </div>
         </div>
 
+        {error ? (
+          <p role="alert" className="font-inter text-sm font-medium text-red-600">
+            {error}
+          </p>
+        ) : null}
+
         <button
           type="submit"
-          className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          disabled={isSubmitting}
+          className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {tenantDetailsCopy.submitLabel}
+          {isSubmitting ? "Submitting…" : tenantDetailsCopy.submitLabel}
         </button>
       </form>
 

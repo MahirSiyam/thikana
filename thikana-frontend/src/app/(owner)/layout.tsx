@@ -1,3 +1,4 @@
+import { RoleGuard } from "@/lib/auth/RoleGuard";
 import { OwnerShell } from "@/features/owner/components/OwnerShell";
 
 export default function OwnerLayout({
@@ -5,5 +6,9 @@ export default function OwnerLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <OwnerShell>{children}</OwnerShell>;
+  return (
+    <RoleGuard allowedRoles={["owner"]}>
+      <OwnerShell>{children}</OwnerShell>
+    </RoleGuard>
+  );
 }

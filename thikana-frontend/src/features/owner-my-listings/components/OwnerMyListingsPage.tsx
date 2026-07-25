@@ -2,24 +2,55 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { routes } from "@/config/routes";
-import {
-  ownerMyListings,
-  ownerMyListingsTabs,
-  ownerReviewBanner,
-} from "@/features/owner-my-listings/data/owner-my-listings.mock";
+import { ownerMyListingsTabs } from "@/features/owner-my-listings/data/owner-my-listings.mock";
 import type {
   OwnerListingCardStatus,
   OwnerMyListing,
   OwnerMyListingsTabId,
 } from "@/features/owner-my-listings/types/owner-my-listings.types";
+import { ApiError } from "@/lib/api/client";
+import {
+  deleteListing,
+  listMyListings,
+  pauseListing,
+  type ListingDto,
+  type ListingStatus,
+} from "@/lib/api/listings";
 
 const statusStyles: Record<OwnerListingCardStatus, string> = {
   "Verified & Live": "bg-[#dcfce7] text-[#16a34a]",
   "Under Review": "bg-[#fef3c7] text-[#f59e0b]",
   Draft: "bg-[#f3f4f6] text-[#6b7280]",
 };
+
+const FALLBACK_IMAGE = "/images/tenant/property-dhanmondi.png";
+
+function mapStatus(status: ListingStatus): OwnerListingCardStatus {
+  if (status === "live") return "Verified & Live";
+  if (status === "under_review") return "Under Review";
+  return "Draft";
+}
+
+function toCard(listing: ListingDto): OwnerMyListing {
+  return {
+    id: listing.id,
+    title: listing.title,
+    address:
+      listing.address.street ||
+      `${listing.address.area}, ${listing.address.district}`,
+    beds: listing.beds,
+    baths: listing.baths,
+    sqft: listing.sizeSqft,
+    priceBdt: listing.monthlyRent,
+    status: mapStatus(listing.status),
+    imageSrc: listing.coverImageUrl || FALLBACK_IMAGE,
+    views: listing.views,
+    viewsTrend: listing.views > 0 ? "up" : "none",
+    bookings: listing.bookingsCount,
+  };
+}
 
 function formatPrice(priceBdt: number): string {
   return priceBdt.toLocaleString("en-US");
@@ -36,10 +67,6 @@ function matchesTab(listing: OwnerMyListing, tab: OwnerMyListingsTabId): boolean
   return listing.status === "Draft";
 }
 
-function getTabCount(tab: OwnerMyListingsTabId): number {
-  return ownerMyListings.filter((listing) => matchesTab(listing, tab)).length;
-}
-
 function ViewsTrendIcon({ trend }: { trend: OwnerMyListing["viewsTrend"] }) {
   if (trend === "up") {
     return <span aria-hidden="true">↑</span>;
@@ -50,7 +77,19 @@ function ViewsTrendIcon({ trend }: { trend: OwnerMyListing["viewsTrend"] }) {
   return null;
 }
 
-function ListingCard({ listing }: { listing: OwnerMyListing }) {
+function ListingCard({
+  listing,
+  rawStatus,
+  onPause,
+  onDelete,
+  busy,
+}: {
+  listing: OwnerMyListing;
+  rawStatus: ListingStatus;
+  onPause: () => void;
+  onDelete: () => void;
+  busy: boolean;
+}) {
   return (
     <article className="flex flex-col gap-4 rounded-xl border border-[#e5e5e2] bg-white p-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
       <div className="flex min-w-0 flex-1 items-start gap-4">
@@ -95,6 +134,8 @@ function ListingCard({ listing }: { listing: OwnerMyListing }) {
           className={`inline-flex w-fit rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${statusStyles[listing.status]}`}
         >
           {listing.status}
+          {rawStatus === "paused" ? " (Paused)" : ""}
+          {rawStatus === "rejected" ? " (Rejected)" : ""}
         </span>
 
         <div className="flex flex-wrap items-center gap-4 font-inter text-xs text-[#6b7280] lg:justify-end">
@@ -105,23 +146,21 @@ function ListingCard({ listing }: { listing: OwnerMyListing }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <button
-            type="button"
-            className="font-inter text-[13px] font-semibold text-black underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-          >
-            Edit
-          </button>
-          {listing.status === "Verified & Live" ? (
+          {rawStatus === "live" ? (
             <button
               type="button"
-              className="font-inter text-[13px] font-semibold text-black underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+              disabled={busy}
+              onClick={onPause}
+              className="font-inter text-[13px] font-semibold text-black underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:opacity-50"
             >
               Pause
             </button>
           ) : null}
           <button
             type="button"
-            className="font-inter text-[13px] font-semibold text-[#dc2626] underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626] focus-visible:ring-offset-2"
+            disabled={busy || rawStatus === "live"}
+            onClick={onDelete}
+            className="font-inter text-[13px] font-semibold text-[#dc2626] underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626] focus-visible:ring-offset-2 disabled:opacity-50"
           >
             Delete
           </button>
@@ -134,20 +173,60 @@ function ListingCard({ listing }: { listing: OwnerMyListing }) {
 export function OwnerMyListingsPage() {
   const [activeTab, setActiveTab] = useState<OwnerMyListingsTabId>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [items, setItems] = useState<ListingDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await listMyListings({ limit: 50 });
+      setItems(response.data || []);
+    } catch (err) {
+      setError(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Could not load listings"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [load]);
+
+  const cards = useMemo(
+    () =>
+      items.map((item) => ({
+        card: toCard(item),
+        raw: item,
+      })),
+    [items]
+  );
+
+  const getTabCount = (tab: OwnerMyListingsTabId) =>
+    cards.filter(({ card }) => matchesTab(card, tab)).length;
+
+  const underReview = items.find((item) => item.status === "under_review");
 
   const visibleListings = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-
-    return ownerMyListings.filter((listing) => {
-      if (!matchesTab(listing, activeTab)) return false;
+    return cards.filter(({ card }) => {
+      if (!matchesTab(card, activeTab)) return false;
       if (!normalizedQuery) return true;
-
       return (
-        listing.title.toLowerCase().includes(normalizedQuery) ||
-        listing.address.toLowerCase().includes(normalizedQuery)
+        card.title.toLowerCase().includes(normalizedQuery) ||
+        card.address.toLowerCase().includes(normalizedQuery)
       );
     });
-  }, [activeTab, searchQuery]);
+  }, [activeTab, cards, searchQuery]);
 
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-[50px] lg:py-[30px]">
@@ -185,26 +264,31 @@ export function OwnerMyListingsPage() {
           </Link>
         </header>
 
-        <div className="flex items-start gap-3 rounded-lg border-l-[3px] border-l-[#f59e0b] bg-[#fffbeb] px-4 py-3">
-          <Image
-            src="/images/owner/icon-alert.svg"
-            alt=""
-            width={16}
-            height={16}
-            aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0"
-          />
-          <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <p className="font-inter text-[13px] text-brand-dark">{ownerReviewBanner.message}</p>
-            <button
-              type="button"
-              onClick={() => setActiveTab("under-review")}
-              className="shrink-0 font-inter text-[13px] font-semibold text-[#f59e0b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b] focus-visible:ring-offset-2"
-            >
-              View Status →
-            </button>
+        {underReview ? (
+          <div className="flex items-start gap-3 rounded-lg border-l-[3px] border-l-[#f59e0b] bg-[#fffbeb] px-4 py-3">
+            <Image
+              src="/images/owner/icon-alert.svg"
+              alt=""
+              width={16}
+              height={16}
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0"
+            />
+            <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <p className="font-inter text-[13px] text-brand-dark">
+                Your listing &apos;{underReview.title}&apos; is being reviewed.
+                You&apos;ll be notified within 24–48 hours.
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab("under-review")}
+                className="shrink-0 font-inter text-[13px] font-semibold text-[#f59e0b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b] focus-visible:ring-offset-2"
+              >
+                View Status →
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div
           role="tablist"
@@ -234,15 +318,63 @@ export function OwnerMyListingsPage() {
           })}
         </div>
 
-        {visibleListings.length > 0 ? (
+        {loading ? (
+          <p className="font-inter text-sm text-[#6b7280]">Loading listings…</p>
+        ) : null}
+        {error ? (
+          <p role="alert" className="font-inter text-sm font-medium text-red-600">
+            {error}
+          </p>
+        ) : null}
+
+        {!loading && !error && visibleListings.length > 0 ? (
           <div className="flex flex-col gap-4">
-            {visibleListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+            {visibleListings.map(({ card, raw }) => (
+              <ListingCard
+                key={card.id}
+                listing={card}
+                rawStatus={raw.status}
+                busy={busyId === raw.id}
+                onPause={async () => {
+                  setBusyId(raw.id);
+                  try {
+                    await pauseListing(raw.id);
+                    await load();
+                  } catch (err) {
+                    setError(
+                      err instanceof Error ? err.message : "Could not pause listing"
+                    );
+                  } finally {
+                    setBusyId(null);
+                  }
+                }}
+                onDelete={async () => {
+                  if (!window.confirm("Delete this listing?")) return;
+                  setBusyId(raw.id);
+                  try {
+                    await deleteListing(raw.id);
+                    await load();
+                  } catch (err) {
+                    setError(
+                      err instanceof Error ? err.message : "Could not delete listing"
+                    );
+                  } finally {
+                    setBusyId(null);
+                  }
+                }}
+              />
             ))}
           </div>
-        ) : (
-          <p className="font-inter text-sm text-[#6b7280]">No listings match your filters.</p>
-        )}
+        ) : null}
+
+        {!loading && !error && visibleListings.length === 0 ? (
+          <p className="font-inter text-sm text-[#6b7280]">
+            No listings match your filters.{" "}
+            <Link href={routes.ownerAddNewListing} className="font-semibold underline">
+              Add a listing
+            </Link>
+          </p>
+        ) : null}
       </div>
     </div>
   );

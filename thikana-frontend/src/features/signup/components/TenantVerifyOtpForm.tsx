@@ -84,7 +84,7 @@ export function TenantVerifyOtpForm({
 
   return (
     <div className="flex w-full max-w-[504px] flex-col items-center gap-3">
-      <SignupStepper activeStepId="verify-number" />
+      <SignupStepper activeStepId="verify-email" />
 
       <div className="w-full max-w-[466px] rounded-xl bg-white px-4 py-4 shadow-[4px_4px_5px_rgba(10,10,10,0.1)] sm:px-6 sm:py-5">
         <button

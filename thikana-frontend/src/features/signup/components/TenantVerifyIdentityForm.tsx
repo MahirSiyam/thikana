@@ -3,9 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
+import { useSignupWizard } from "@/features/signup/context/SignupWizardProvider";
+import type { CloudinaryAsset } from "@/lib/api/auth";
+import { uploadToCloudinary, type UploadFolder } from "@/lib/api/uploads";
 
 type UploadSlot = "nid-front" | "nid-back" | "selfie";
 
@@ -14,20 +17,134 @@ type TenantVerifyIdentityFormProps = {
   nextHref?: string | null;
 };
 
+const slotToFolder: Record<UploadSlot, UploadFolder> = {
+  "nid-front": "identity/nid-front",
+  "nid-back": "identity/nid-back",
+  selfie: "identity/selfie",
+};
+
+const slotToKey = {
+  "nid-front": "nidFront",
+  "nid-back": "nidBack",
+  selfie: "selfie",
+} as const;
+
+const uploadSlots = [
+  ["nid-front", "NID — Front Side"],
+  ["nid-back", "NID — Back Side"],
+  ["selfie", "Live Selfie"],
+] as const;
+
 export function TenantVerifyIdentityForm({
-  backHref = routes.signUpTenantVerifyOtp,
+  backHref = routes.signUpTenantForm,
   nextHref = routes.signUpTenantDetails,
 }: TenantVerifyIdentityFormProps = {}) {
   const router = useRouter();
   const formId = useId();
-  const [files, setFiles] = useState<Partial<Record<UploadSlot, string>>>({});
+  const { state, hydrated, setIdentityDocuments } = useSignupWizard();
+  const inputRefs = useRef<Partial<Record<UploadSlot, HTMLInputElement | null>>>({});
+  const previewUrlsRef = useRef<string[]>([]);
+  const [fileNames, setFileNames] = useState<Partial<Record<UploadSlot, string>>>({});
+  const [previews, setPreviews] = useState<Partial<Record<UploadSlot, string>>>({});
+  const [assets, setAssets] = useState<
+    Partial<Record<"nidFront" | "nidBack" | "selfie", CloudinaryAsset>>
+  >({});
+  const [uploadingSlot, setUploadingSlot] = useState<UploadSlot | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [restored, setRestored] = useState(false);
 
-  const handleFileChange = (slot: UploadSlot, fileList: FileList | null) => {
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || restored) return;
+
+    const docs = state.commonData.identityDocuments || {};
+    const nextAssets: Partial<
+      Record<"nidFront" | "nidBack" | "selfie", CloudinaryAsset>
+    > = {};
+    const nextPreviews: Partial<Record<UploadSlot, string>> = {};
+    const nextNames: Partial<Record<UploadSlot, string>> = {};
+
+    (Object.keys(slotToKey) as UploadSlot[]).forEach((slot) => {
+      const key = slotToKey[slot];
+      const asset = docs[key];
+      if (!asset?.publicId) return;
+      nextAssets[key] = asset;
+      if (asset.secureUrl) {
+        nextPreviews[slot] = asset.secureUrl;
+      }
+      nextNames[slot] = asset.format
+        ? `${key}.${asset.format}`
+        : "Uploaded document";
+    });
+
+    setAssets(nextAssets);
+    setPreviews(nextPreviews);
+    setFileNames(nextNames);
+    setRestored(true);
+  }, [hydrated, restored, state.commonData.identityDocuments]);
+
+  const handleFileChange = async (slot: UploadSlot, fileList: FileList | null) => {
     const file = fileList?.[0];
-    setFiles((current) => ({
-      ...current,
-      [slot]: file ? file.name : undefined,
-    }));
+    if (!file) return;
+
+    if (uploadingSlot) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload an image file (JPG, PNG, or WebP).");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Each image must be under 8MB.");
+      return;
+    }
+
+    setError(null);
+    setUploadingSlot(slot);
+    setFileNames((current) => ({ ...current, [slot]: file.name }));
+
+    const objectUrl = URL.createObjectURL(file);
+    previewUrlsRef.current.push(objectUrl);
+    setPreviews((current) => ({ ...current, [slot]: objectUrl }));
+
+    try {
+      const uploaded = await uploadToCloudinary({
+        file,
+        folder: slotToFolder[slot],
+        resourceType: "image",
+      });
+      setAssets((current) => {
+        const next = {
+          ...current,
+          [slotToKey[slot]]: uploaded,
+        };
+        setIdentityDocuments(next);
+        return next;
+      });
+    } catch (err) {
+      setFileNames((current) => ({ ...current, [slot]: undefined }));
+      setPreviews((current) => {
+        const next = { ...current };
+        delete next[slot];
+        return next;
+      });
+      setAssets((current) => {
+        const next = { ...current };
+        delete next[slotToKey[slot]];
+        setIdentityDocuments(next);
+        return next;
+      });
+      setError(err instanceof Error ? err.message : "Could not upload document");
+    } finally {
+      setUploadingSlot(null);
+      const input = inputRefs.current[slot];
+      if (input) input.value = "";
+    }
   };
 
   const goNext = () => {
@@ -36,10 +153,26 @@ export function TenantVerifyIdentityForm({
     }
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (uploadingSlot) return;
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      setIdentityDocuments(assets);
+      goNext();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSkip = () => {
+    if (uploadingSlot) return;
+    setIdentityDocuments(assets);
     goNext();
   };
+
+  const isBusy = uploadingSlot !== null;
 
   return (
     <div className="flex w-full max-w-[505px] flex-col items-center gap-3">
@@ -80,127 +213,121 @@ export function TenantVerifyIdentityForm({
           </p>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <p className="font-inter text-sm font-semibold text-black">National ID Card</p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <UploadBox
-              id={`${formId}-nid-front`}
-              title="NID — Front Side"
-              hint="Clear photo, all 4 corners visible"
-              iconSrc="/images/signup/icon-cloud-upload.svg"
-              fileName={files["nid-front"]}
-              onChange={(fileList) => handleFileChange("nid-front", fileList)}
-            />
-            <UploadBox
-              id={`${formId}-nid-back`}
-              title="NID — Back Side"
-              hint="Clear photo, all 4 corners visible"
-              iconSrc="/images/signup/icon-cloud-upload.svg"
-              fileName={files["nid-back"]}
-              onChange={(fileList) => handleFileChange("nid-back", fileList)}
-            />
-          </div>
-        </div>
+        {isBusy ? (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 font-inter text-xs font-medium text-amber-900">
+            Uploading… other fields are temporarily locked.
+          </p>
+        ) : null}
 
         <div className="flex flex-col gap-3">
-          <p className="font-inter text-sm font-semibold text-black">Selfie Verification</p>
-          <UploadBox
-            id={`${formId}-selfie`}
-            title="Take a Live Selfie"
-            hint="This confirms the NID belongs to you. No sunglasses or filters."
-            iconSrc="/images/signup/icon-camera.svg"
-            fileName={files.selfie}
-            tall
-            onChange={(fileList) => handleFileChange("selfie", fileList)}
-          />
+          {uploadSlots.map(([slot, label]) => {
+            const isThisUploading = uploadingSlot === slot;
+            const isLocked = isBusy && !isThisUploading;
+            const assetKey = slotToKey[slot];
+            const uploaded = Boolean(assets[assetKey]);
+            const preview = previews[slot];
+
+            return (
+              <div key={slot} className="flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-inter text-[13px] font-semibold text-[#161616]">
+                    {label}
+                  </p>
+                  {uploaded && !isThisUploading ? (
+                    <span className="font-inter text-[11px] font-semibold text-emerald-700">
+                      Uploaded
+                    </span>
+                  ) : null}
+                </div>
+                <label
+                  htmlFor={`${formId}-${slot}`}
+                  aria-disabled={isLocked || isThisUploading}
+                  className={`relative flex min-h-[110px] flex-col items-center justify-center gap-1 overflow-hidden rounded-[10px] border-[1.5px] border-dashed px-3 py-3 text-center transition-colors ${
+                    isLocked
+                      ? "cursor-not-allowed border-[#e5e5e2] bg-[#f3f3f1] opacity-55"
+                      : isThisUploading
+                        ? "cursor-wait border-brand-dark/40 bg-[#f7f7f5]"
+                        : uploaded
+                          ? "cursor-pointer border-emerald-300 bg-emerald-50/40 hover:border-emerald-500"
+                          : "cursor-pointer border-[#ccccca] bg-[#fafafa] hover:border-brand-dark/50"
+                  }`}
+                >
+                  {preview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={preview}
+                      alt=""
+                      className="absolute inset-0 size-full object-cover opacity-35"
+                    />
+                  ) : null}
+                  <div className="relative z-10 flex flex-col items-center gap-1">
+                    <Image
+                      src="/images/signup/icon-cloud-upload.svg"
+                      alt=""
+                      width={22}
+                      height={22}
+                      aria-hidden="true"
+                    />
+                    <span className="font-inter text-sm font-medium text-brand-dark">
+                      {isThisUploading
+                        ? "Uploading..."
+                        : isLocked
+                          ? "Wait for current upload"
+                          : uploaded
+                            ? fileNames[slot] || "Uploaded — click to replace"
+                            : "Drag & drop or click to upload"}
+                    </span>
+                  </div>
+                  <input
+                    id={`${formId}-${slot}`}
+                    ref={(node) => {
+                      inputRefs.current[slot] = node;
+                    }}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    disabled={isLocked || isThisUploading}
+                    onChange={(event) =>
+                      void handleFileChange(slot, event.target.files)
+                    }
+                  />
+                </label>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex flex-col items-center gap-3">
+        {error ? (
+          <p role="alert" className="font-inter text-sm font-medium text-red-600">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="flex flex-col gap-2">
           <button
             type="submit"
-            className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+            disabled={isSubmitting || isBusy}
+            className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Continue →
+            {isSubmitting ? "Saving…" : "Continue →"}
           </button>
           <button
             type="button"
-            onClick={goNext}
-            className="font-inter text-sm font-semibold text-brand-dark/50 transition-opacity hover:opacity-70"
+            disabled={isBusy}
+            onClick={handleSkip}
+            className="font-inter text-sm font-semibold text-brand-dark/50 transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Skip for now - verify later
+            Skip for now
           </button>
-          <div className="flex items-center gap-1.5 rounded bg-[#fffbeb] p-2">
-            <Image
-              src="/images/signup/icon-alert-triangle.svg"
-              alt=""
-              width={14}
-              height={14}
-              aria-hidden="true"
-              className="size-3.5 shrink-0"
-            />
-            <p className="font-inter text-xs font-medium text-[#b45309]">
-              Unverified tenants may have limited booking access
-            </p>
-          </div>
         </div>
       </form>
 
       <p className="flex flex-wrap items-center justify-center gap-1 font-inter text-base">
         <span className="text-brand-dark/50">Already have an account?</span>
-        <Link
-          href={routes.signIn}
-          className="font-bold text-brand-dark transition-opacity hover:opacity-70"
-        >
+        <Link href={routes.signIn} className="font-bold text-brand-dark">
           Sign In →
         </Link>
       </p>
     </div>
-  );
-}
-
-function UploadBox({
-  id,
-  title,
-  hint,
-  iconSrc,
-  fileName,
-  tall = false,
-  onChange,
-}: {
-  id: string;
-  title: string;
-  hint: string;
-  iconSrc: string;
-  fileName?: string;
-  tall?: boolean;
-  onChange: (files: FileList | null) => void;
-}) {
-  return (
-    <label
-      htmlFor={id}
-      className={`flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-[#ccccca] bg-[#fafafa] px-3 text-center transition-colors hover:border-brand-dark/50 ${
-        tall ? "min-h-[120px] py-4" : "min-h-[100px] py-3"
-      }`}
-    >
-      <Image
-        src={iconSrc}
-        alt=""
-        width={24}
-        height={24}
-        aria-hidden="true"
-        className="size-6"
-      />
-      <span className="font-inter text-[13px] font-semibold text-[#161616]">{title}</span>
-      <span className="font-inter text-xs text-brand-dark/50">
-        {fileName ?? hint}
-      </span>
-      <input
-        id={id}
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        onChange={(event) => onChange(event.target.files)}
-      />
-    </label>
   );
 }

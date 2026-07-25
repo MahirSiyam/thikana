@@ -3,7 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ownerNavItems, ownerUser } from "@/features/owner/data/owner.mock";
+import { useState } from "react";
+import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
+import { routes } from "@/config/routes";
+import { ownerNavItems } from "@/features/owner/data/owner.mock";
+import { useAuth } from "@/lib/auth/AuthProvider";
+import { useDashboardSignOut } from "@/lib/auth/use-dashboard-sign-out";
 
 type OwnerSidebarProps = {
   mobileOpen?: boolean;
@@ -24,6 +29,12 @@ function ThikanaOwnerWordmark() {
 
 export function OwnerSidebar({ mobileOpen = false, onClose }: OwnerSidebarProps) {
   const pathname = usePathname();
+  const { profile } = useAuth();
+  const { signingOut, signOutUser } = useDashboardSignOut({ scope: "user" });
+  const [imageFailed, setImageFailed] = useState(false);
+  const displayName = profile?.fullName || profile?.email || "Owner";
+  const avatarSrc =
+    !imageFailed && profile?.avatarUrl ? profile.avatarUrl : null;
 
   return (
     <>
@@ -42,7 +53,14 @@ export function OwnerSidebar({ mobileOpen = false, onClose }: OwnerSidebarProps)
         aria-label="Owner navigation"
       >
         <div className="flex flex-col gap-6">
-          <ThikanaOwnerWordmark />
+          <Link
+            href={routes.home}
+            onClick={onClose}
+            aria-label="Thikana home"
+            className="block w-fit transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark"
+          >
+            <ThikanaOwnerWordmark />
+          </Link>
 
           <nav aria-label="Owner">
             <ul className="flex flex-col gap-1">
@@ -93,26 +111,34 @@ export function OwnerSidebar({ mobileOpen = false, onClose }: OwnerSidebarProps)
           </nav>
         </div>
 
-        <div className="mt-auto border-t border-[#e5e5e2] pt-4">
+        <div className="mt-auto flex flex-col gap-3 border-t border-[#e5e5e2] pt-4">
           <div className="flex items-center gap-2">
-            <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
-              <Image
-                src={ownerUser.avatarSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="48px"
-              />
-            </div>
+            <ProfileAvatar
+              src={avatarSrc}
+              size="lg"
+              className="ring-1 ring-white/20"
+              onError={() => setImageFailed(true)}
+            />
             <div className="flex min-w-0 flex-col gap-1">
               <p className="truncate font-inter text-sm font-semibold text-white">
-                {ownerUser.name}
+                {displayName}
               </p>
               <span className="inline-flex w-fit items-center rounded-full bg-[#f3f4f6] px-2 py-1 font-inter text-[11px] font-semibold text-[#6b7280]">
-                {ownerUser.roleBadge}
+                Property Owner
               </span>
             </div>
           </div>
+          <button
+            type="button"
+            disabled={signingOut}
+            onClick={() => {
+              onClose?.();
+              void signOutUser();
+            }}
+            className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-white/30 font-inter text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {signingOut ? "Signing out…" : "Sign out"}
+          </button>
         </div>
       </aside>
     </>

@@ -3,21 +3,69 @@ import type {
   VerificationListing,
 } from "@/features/admin-listing-verification/types/admin-listing-verification.types";
 
-export const listingVerificationTabs: { id: ListingVerificationTabId; label: string }[] =
-  [
-    { id: "all", label: "All" },
-    { id: "newly-submitted", label: "Newly Submitted" },
-    { id: "documents-uploaded", label: "Documents Uploaded" },
-    { id: "awaiting-photo-review", label: "Awaiting Photo Review" },
-    { id: "ready-to-approve", label: "Ready to Approve" },
-  ];
+export const listingVerificationTabs: {
+  id: ListingVerificationTabId;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "all",
+    label: "All",
+    description: "Every listing still waiting for admin review.",
+  },
+  {
+    id: "newly-submitted",
+    label: "Newly Submitted",
+    description: "Just submitted — owner ID check still pending or in progress.",
+  },
+  {
+    id: "documents-uploaded",
+    label: "Documents Uploaded",
+    description: "Owner ID checked. Review property details and documents next.",
+  },
+  {
+    id: "awaiting-photo-review",
+    label: "Awaiting Photo Review",
+    description: "Docs reviewed. Check listing photos quality and accuracy.",
+  },
+  {
+    id: "ready-to-approve",
+    label: "Ready to Approve",
+    description: "Checklist complete (Verified). Approve to publish live.",
+  },
+];
 
 export const listingVerificationSteps = [
-  { id: "submitted", label: "Submitted" },
-  { id: "id-checked", label: "ID Checked" },
-  { id: "docs-reviewed", label: "Docs Reviewed" },
-  { id: "photo-ok", label: "Photo OK" },
-  { id: "verified", label: "Verified" },
+  {
+    id: "submitted",
+    label: "Submitted",
+    shortLabel: "1. Submit",
+    hint: "Owner sent this listing for review",
+  },
+  {
+    id: "id-checked",
+    label: "ID Checked",
+    shortLabel: "2. ID",
+    hint: "Confirm owner identity looks valid",
+  },
+  {
+    id: "docs-reviewed",
+    label: "Docs Reviewed",
+    shortLabel: "3. Docs",
+    hint: "Property info & documents look complete",
+  },
+  {
+    id: "photo-ok",
+    label: "Photo OK",
+    shortLabel: "4. Photos",
+    hint: "Photos are clear and match the listing",
+  },
+  {
+    id: "verified",
+    label: "Verified",
+    shortLabel: "5. Done",
+    hint: "Ready to approve and publish",
+  },
 ] as const;
 
 export const pendingVerificationCount = 18;

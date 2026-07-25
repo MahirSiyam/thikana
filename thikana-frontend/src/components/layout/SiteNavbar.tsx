@@ -3,11 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  HeaderAuthActions,
-  NavPill,
-  NavPillList,
-} from "@/components/layout/NavPill";
+import { HeaderAuthActions } from "@/components/layout/HeaderAuthActions";
+import { NavPill, NavPillList } from "@/components/layout/NavPill";
 import { headerNavigation } from "@/config/navigation";
 import { routes } from "@/config/routes";
 

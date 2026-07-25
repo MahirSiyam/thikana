@@ -3,16 +3,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { useId, useState, type FormEvent } from "react";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import {
   bangladeshDivisions,
   tenantBasicInfoCopy,
 } from "@/features/signup/data/signup.mock";
 import { SignupStepper } from "@/features/signup/components/SignupStepper";
+import { useSignupWizard } from "@/features/signup/context/SignupWizardProvider";
+import { getMe } from "@/lib/api/auth";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { auth } from "@/lib/firebase/firebase";
-import { sendEmailOtp } from "@/lib/api/emailVerification";
 
 const fieldClassName =
   "h-[52px] w-full rounded-[10px] border border-[#e5e5e2] bg-white px-4 font-inter text-[15px] text-brand-dark outline-none placeholder:text-brand-dark/50 focus-visible:ring-2 focus-visible:ring-brand-dark/20";
@@ -20,6 +26,7 @@ const fieldClassName =
 type TenantBasicInfoFormProps = {
   backHref?: string;
   nextHref?: string | null;
+  role?: "tenant" | "owner" | "service_provider";
 };
 
 function firebaseSignupErrorMessage(error: unknown): string {
@@ -38,20 +45,75 @@ function firebaseSignupErrorMessage(error: unknown): string {
 
 export function TenantBasicInfoForm({
   backHref = routes.signUpTenant,
-  nextHref = routes.signUpTenantVerifyOtp,
+  // After email OTP succeeds, continue at identity verification.
+  nextHref = routes.signUpTenantVerifyIdentity,
+  role = "tenant",
 }: TenantBasicInfoFormProps = {}) {
   const router = useRouter();
+  const { firebaseUser, loading: authLoading } = useAuth();
+  const { state, hydrated, setRole, setEmail, patchCommonData } = useSignupWizard();
   const formId = useId();
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmailField] = useState("");
   const [password, setPassword] = useState("");
   const [division, setDivision] = useState("");
   const [district, setDistrict] = useState("");
   const [area, setArea] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+
+  const alreadySignedIn = Boolean(firebaseUser);
+  const showPasswordField = !authLoading && !alreadySignedIn;
+
+  // Restore previously filled basic info when navigating back in the wizard.
+  useEffect(() => {
+    if (!hydrated || restored) return;
+
+    const storedEmail =
+      state.email.trim() || firebaseUser?.email?.trim() || "";
+    setFullName(state.commonData.fullName || "");
+    setMobile(state.commonData.phone || "");
+    setEmailField(storedEmail);
+    setDivision(state.commonData.address.division || "");
+    setDistrict(state.commonData.address.district || "");
+    setArea(state.commonData.address.area || "");
+    setRestored(true);
+  }, [hydrated, restored, state, firebaseUser]);
+
+  // If auth resolves after first restore, fill email when still empty.
+  useEffect(() => {
+    if (!firebaseUser?.email) return;
+    setEmailField((current) => current || firebaseUser.email || "");
+  }, [firebaseUser]);
+
+  const saveWizardBasics = () => {
+    setRole(role);
+    setEmail(email.trim());
+    patchCommonData({
+      fullName: fullName.trim(),
+      phone: mobile.trim(),
+      address: {
+        division: division || undefined,
+        district: district || undefined,
+        area: area || undefined,
+      },
+    });
+  };
+
+  const continueAfterBasics = () => {
+    const verifyEmailTarget = `${routes.verifyEmail}?next=${encodeURIComponent(
+      nextHref ?? routes.signUpTenantVerifyIdentity
+    )}`;
+    // If email is already verified, skip OTP and resume the next signup step.
+    if (firebaseUser?.emailVerified && nextHref) {
+      router.push(nextHref);
+      return;
+    }
+    router.push(verifyEmailTarget);
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,40 +123,64 @@ export function TenantBasicInfoForm({
       setError("Email address is required to verify your account.");
       return;
     }
-    if (password.length < 8) {
+    if (!mobile.trim()) {
+      setError("Mobile number is required.");
+      return;
+    }
+    if (!alreadySignedIn && password.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      // Already mid-signup — just update stored basics and move on.
+      if (firebaseUser) {
+        if (fullName.trim() && firebaseUser.displayName !== fullName.trim()) {
+          await updateProfile(firebaseUser, { displayName: fullName.trim() });
+        }
+        saveWizardBasics();
+        continueAfterBasics();
+        return;
+      }
+
+      let credential;
+      try {
+        credential = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password
+        );
+      } catch (createError: unknown) {
+        const code = (createError as { code?: string })?.code;
+        if (code !== "auth/email-already-in-use") {
+          throw createError;
+        }
+
+        // Resume an unfinished signup instead of blocking at the final step later.
+        credential = await signInWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password
+        );
+        const me = await getMe("user").catch(() => null);
+        if (me?.registrationComplete) {
+          setError(
+            "An account already exists with this email. Try signing in instead."
+          );
+          return;
+        }
+      }
+
       if (fullName.trim()) {
         await updateProfile(credential.user, { displayName: fullName.trim() });
       }
 
-      // Firebase account created — now trigger the email OTP send on our backend.
-      await sendEmailOtp();
-
-      const verifyEmailTarget = `${routes.verifyEmail}?next=${encodeURIComponent(
-        nextHref ?? routes.signUpTenantVerifyOtp
-      )}`;
-      router.push(verifyEmailTarget);
-    }
-    catch (err: unknown) {
-      console.log("FULL ERROR:", err);
-
-      // Narrow unknown to extract common fields safely
-      const errorCode = typeof err === "object" && err !== null && "code" in err ? (err as { code?: unknown }).code : undefined;
-      const errorMessage = err instanceof Error ? err.message : typeof err === "object" && err !== null && "message" in err ? String((err as { message?: unknown }).message) : undefined;
-
-      console.log("ERROR CODE:", errorCode);
-      console.log("ERROR MESSAGE:", errorMessage);
-
-      // firebaseSignupErrorMessage expects a value it can handle; cast only here.
-      setError(firebaseSignupErrorMessage(err as any));
-    }
-    finally {
+      saveWizardBasics();
+      continueAfterBasics();
+    } catch (err: unknown) {
+      setError(firebaseSignupErrorMessage(err));
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -127,7 +213,7 @@ export function TenantBasicInfoForm({
           </header>
 
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label
                   htmlFor={`${formId}-name`}
@@ -169,7 +255,7 @@ export function TenantBasicInfoForm({
                   />
                 </div>
                 <p className="font-inter text-xs text-brand-dark/50">
-                  We&apos;ll send an OTP to verify this number
+                  Used for booking updates and account recovery
                 </p>
               </div>
 
@@ -186,55 +272,62 @@ export function TenantBasicInfoForm({
                   autoComplete="email"
                   required
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => setEmailField(event.target.value)}
+                  readOnly={alreadySignedIn}
                   placeholder="you@example.com"
-                  className={fieldClassName}
+                  className={`${fieldClassName}${
+                    alreadySignedIn ? " bg-[#f7f7f5] text-brand-dark/80" : ""
+                  }`}
                 />
                 <p className="font-inter text-xs text-brand-dark/50">
-                  We&apos;ll send a 6-digit code here to verify your account
+                  {alreadySignedIn
+                    ? "Signed in with this email — continue to keep your progress"
+                    : "We'll send a 6-digit code here to verify your account"}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label
-                  htmlFor={`${formId}-password`}
-                  className="font-inter text-[13px] font-semibold text-[#161616]"
-                >
-                  Password
-                </label>
-                <div className="flex h-[52px] items-center rounded-[10px] border border-[#e5e5e2] bg-white px-4 focus-within:ring-2 focus-within:ring-brand-dark/20">
-                  <input
-                    id={`${formId}-password`}
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="••••••••"
-                    className="min-w-0 flex-1 bg-transparent font-inter text-[15px] text-brand-dark outline-none placeholder:text-brand-dark/50"
-                  />
-                  <button
-                    type="button"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    onClick={() => setShowPassword((value) => !value)}
-                    className="inline-flex size-5 shrink-0 items-center justify-center"
+              {!showPasswordField ? null : (
+                <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor={`${formId}-password`}
+                    className="font-inter text-[13px] font-semibold text-[#161616]"
                   >
-                    <Image
-                      src={
-                        showPassword
-                          ? "/images/signin/icon-eye.svg"
-                          : "/images/signin/icon-eye-off.svg"
-                      }
-                      alt=""
-                      width={20}
-                      height={20}
-                      aria-hidden="true"
+                    Password
+                  </label>
+                  <div className="flex h-[52px] items-center rounded-[10px] border border-[#e5e5e2] bg-white px-4 focus-within:ring-2 focus-within:ring-brand-dark/20">
+                    <input
+                      id={`${formId}-password`}
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="••••••••"
+                      className="min-w-0 flex-1 bg-transparent font-inter text-[15px] text-brand-dark outline-none placeholder:text-brand-dark/50"
                     />
-                  </button>
+                    <button
+                      type="button"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="inline-flex size-5 shrink-0 items-center justify-center"
+                    >
+                      <Image
+                        src={
+                          showPassword
+                            ? "/images/signin/icon-eye.svg"
+                            : "/images/signin/icon-eye-off.svg"
+                        }
+                        alt=""
+                        width={20}
+                        height={20}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </div>
+                  <p className="font-inter text-xs text-brand-dark/50">
+                    Minimum 8 characters, at least 1 number
+                  </p>
                 </div>
-                <p className="font-inter text-xs text-brand-dark/50">
-                  Minimum 8 characters, at least 1 number
-                </p>
-              </div>
+              )}
 
               <div className="flex flex-col gap-2">
                 <p className="font-inter text-[13px] font-semibold text-[#161616]">
@@ -313,7 +406,11 @@ export function TenantBasicInfoForm({
                 disabled={isSubmitting}
                 className="inline-flex h-[52px] w-full items-center justify-center rounded-[10px] bg-[#0f0f0f] font-inter text-[15px] font-medium text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? "Creating account..." : tenantBasicInfoCopy.continueLabel}
+                {isSubmitting
+                  ? alreadySignedIn
+                    ? "Saving..."
+                    : "Creating account..."
+                  : tenantBasicInfoCopy.continueLabel}
               </button>
             </div>
           </div>

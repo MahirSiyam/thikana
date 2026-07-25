@@ -14,6 +14,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { routes } from "@/config/routes";
+import { SignupStepper } from "@/features/signup/components/SignupStepper";
 import { auth } from "@/lib/firebase/firebase";
 import { sendEmailOtp, verifyEmailOtp } from "@/lib/api/emailVerification";
 
@@ -24,6 +25,7 @@ export function EmailOtpVerificationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextHref = searchParams.get("next") || routes.home;
+  const isSignupFlow = nextHref.startsWith("/signup/");
 
   const formId = useId();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
@@ -73,7 +75,6 @@ export function EmailOtpVerificationForm() {
     });
 
     return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, nextHref]);
 
   useEffect(() => {
@@ -144,7 +145,10 @@ export function EmailOtpVerificationForm() {
   };
 
   return (
-    <div className="w-full max-w-[466px] rounded-xl bg-white px-4 py-4 shadow-[4px_4px_5px_rgba(10,10,10,0.1)] sm:px-6 sm:py-5">
+    <div className="flex w-full max-w-[504px] flex-col items-center gap-3">
+      {isSignupFlow ? <SignupStepper activeStepId="verify-email" /> : null}
+
+      <div className="w-full max-w-[466px] rounded-xl bg-white px-4 py-4 shadow-[4px_4px_5px_rgba(10,10,10,0.1)] sm:px-6 sm:py-5">
       <header className="mb-3 space-y-0.5">
         <h1 className="font-jakarta text-[clamp(1.5rem,4vw,1.875rem)] font-extrabold tracking-tight text-brand-dark">
           Verify your email
@@ -229,6 +233,7 @@ export function EmailOtpVerificationForm() {
           Sign In
         </Link>
       </p>
+      </div>
     </div>
   );
 }

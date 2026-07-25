@@ -3,9 +3,15 @@ import type { TenantNavItem, TenantUser } from "@/features/tenant/types/tenant.t
 
 export const tenantNavItems: TenantNavItem[] = [
   {
+    id: "home",
+    label: "Home",
+    iconSrc: "/images/tenant/icon-home.svg",
+    href: routes.home,
+  },
+  {
     id: "overview",
     label: "Overview",
-    iconSrc: "/images/tenant/icon-home.svg",
+    iconSrc: "/images/tenant/icon-settings.svg",
     href: routes.tenantOverview,
   },
   {
