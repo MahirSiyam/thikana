@@ -22,6 +22,9 @@ import type { listingReviewChecklistSchema } from "../validation/listing.validat
 
 type ReviewChecklist = z.infer<typeof listingReviewChecklistSchema>;
 
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const assertChecklistComplete = (checklist: ReviewChecklist) => {
   const ids = new Set(checklist.map((item) => item.id));
   for (const item of LISTING_REVIEW_CHECKLIST_ITEMS) {
@@ -404,9 +407,19 @@ export const getOwnerListing = async (input: {
 
 export const listPublicListings = async (query: ListingListQuery) => {
   const filter: Record<string, unknown> = { status: "live" };
-  if (query.area) filter["address.area"] = new RegExp(`^${query.area}$`, "i");
+  if (query.division) {
+    filter["address.division"] = new RegExp(`^${escapeRegex(query.division)}$`, "i");
+  }
+  if (query.district) {
+    filter["address.district"] = new RegExp(`^${escapeRegex(query.district)}$`, "i");
+  }
+  if (query.area) {
+    filter["address.area"] = new RegExp(`^${escapeRegex(query.area)}$`, "i");
+  }
   if (query.propertyType) filter.propertyType = query.propertyType;
   if (query.whoCanRent) filter.whoCanRent = query.whoCanRent;
+  if (query.beds !== undefined) filter.beds = query.beds;
+  else if (query.minBeds !== undefined) filter.beds = { $gte: query.minBeds };
   if (query.minPrice !== undefined || query.maxPrice !== undefined) {
     filter.monthlyRent = {
       ...(query.minPrice !== undefined ? { $gte: query.minPrice } : {}),

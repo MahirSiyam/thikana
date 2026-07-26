@@ -2,16 +2,39 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { routes } from "@/config/routes";
 import { formatListingAddress } from "@/features/home-details/lib/listing-display";
+import { ApiError } from "@/lib/api/client";
 import type { ListingDto } from "@/lib/api/listings";
+import {
+  checkSavedHome,
+  removeSavedHome,
+  saveHome,
+} from "@/lib/api/saved-homes";
+import { createBooking } from "@/lib/api/tenant";
 import { useAuth } from "@/lib/auth/AuthProvider";
 
+function bookingErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.code === "MONTHLY_LIMIT") {
+      return err.message || "You have reached your monthly booking request limit.";
+    }
+    if (err.code === "ALREADY_PENDING") {
+      return err.message || "You already have a pending request for this listing.";
+    }
+    return err.message;
+  }
+  if (err instanceof Error) return err.message;
+  return "Could not send booking request.";
+}
+
 export function HomeDetailsBookingCard({ listing }: { listing: ListingDto }) {
-  const { firebaseUser, profile } = useAuth();
+  const { firebaseUser, profile, loading: authLoading } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveBusy, setSaveBusy] = useState(false);
 
   const location = formatListingAddress(listing.address);
   const ownerName = listing.ownerName || "Property owner";
@@ -19,6 +42,26 @@ export function HomeDetailsBookingCard({ listing }: { listing: ListingDto }) {
     ? new Date(listing.ownerMemberSince).getFullYear()
     : null;
   const nextPath = routes.homeDetailsFor(listing.slug);
+  const isTenant = profile?.role === "tenant";
+
+  useEffect(() => {
+    if (!firebaseUser || !isTenant) {
+      setSaved(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const isSaved = await checkSavedHome(listing.id);
+        if (!cancelled) setSaved(isSaved);
+      } catch {
+        if (!cancelled) setSaved(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [firebaseUser, isTenant, listing.id]);
 
   const requireAuth = () => {
     if (firebaseUser) return true;
@@ -28,14 +71,21 @@ export function HomeDetailsBookingCard({ listing }: { listing: ListingDto }) {
 
   const handleBooking = async () => {
     if (!requireAuth()) return;
+    if (!isTenant) {
+      setMessage("Only tenants can send booking requests. Please sign in with a tenant account.");
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
-      // Booking API is not live yet — confirm intent for signed-in tenants.
-      await new Promise((resolve) => window.setTimeout(resolve, 400));
+      await createBooking({ listingId: listing.id });
       setMessage(
-        `Thanks${profile?.fullName ? `, ${profile.fullName.split(" ")[0]}` : ""}. Your booking interest for “${listing.title}” was noted. The owner will be able to respond once booking requests go live.`
+        `Booking request sent${
+          profile?.fullName ? `, ${profile.fullName.split(" ")[0]}` : ""
+        }. The owner will review your request.`
       );
+    } catch (err) {
+      setMessage(bookingErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -52,6 +102,35 @@ export function HomeDetailsBookingCard({ listing }: { listing: ListingDto }) {
       );
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleToggleSave = async () => {
+    if (!requireAuth()) return;
+    if (!isTenant) {
+      setMessage("Only tenants can save homes. Please sign in with a tenant account.");
+      return;
+    }
+    setSaveBusy(true);
+    setMessage(null);
+    try {
+      if (saved) {
+        await removeSavedHome(listing.id);
+        setSaved(false);
+        setMessage("Removed from saved homes.");
+      } else {
+        await saveHome(listing.id);
+        setSaved(true);
+        setMessage("Saved to your homes.");
+      }
+    } catch (err) {
+      setMessage(
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Could not update saved home."
+      );
+    } finally {
+      setSaveBusy(false);
     }
   };
 
@@ -127,12 +206,11 @@ export function HomeDetailsBookingCard({ listing }: { listing: ListingDto }) {
         <div className="flex items-center gap-4">
           <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#d9d9d9] font-inter text-sm font-bold text-brand-dark/70">
             {listing.ownerAvatarUrl ? (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={listing.ownerAvatarUrl}
                 alt=""
-                fill
-                className="object-cover"
-                sizes="48px"
+                className="size-full object-cover"
               />
             ) : (
               ownerName.slice(0, 1).toUpperCase()
@@ -165,7 +243,7 @@ export function HomeDetailsBookingCard({ listing }: { listing: ListingDto }) {
         <div className="flex flex-col gap-3">
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || authLoading}
             onClick={() => void handleBooking()}
             className="inline-flex h-[52px] w-full items-center justify-center rounded-xl bg-brand-dark font-inter text-[15px] font-semibold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:opacity-60"
           >
@@ -173,18 +251,37 @@ export function HomeDetailsBookingCard({ listing }: { listing: ListingDto }) {
           </button>
           <button
             type="button"
+            disabled={busy || saveBusy || authLoading}
+            onClick={() => void handleToggleSave()}
+            className="inline-flex h-[52px] w-full items-center justify-center rounded-xl border border-brand-dark font-inter text-[15px] font-semibold text-brand-dark transition-colors hover:bg-brand-dark/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:opacity-60"
+          >
+            {saveBusy
+              ? "Please wait…"
+              : saved
+                ? "Remove from Saved"
+                : "Save Home"}
+          </button>
+          <button
+            type="button"
             disabled={busy}
             onClick={() => void handleMessage()}
-            className="inline-flex h-[52px] w-full items-center justify-center rounded-xl border border-brand-dark font-inter text-[15px] font-semibold text-brand-dark transition-colors hover:bg-brand-dark/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:opacity-60"
+            className="inline-flex h-[52px] w-full items-center justify-center rounded-xl border border-[#e5e5e2] font-inter text-[15px] font-semibold text-brand-dark transition-colors hover:bg-brand-dark/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:opacity-60"
           >
             Message Owner
           </button>
           {!firebaseUser ? (
             <p className="text-center font-inter text-xs text-brand-dark/50">
-              <Link href={`${routes.signIn}?next=${encodeURIComponent(nextPath)}`} className="underline">
+              <Link
+                href={`${routes.signIn}?next=${encodeURIComponent(nextPath)}`}
+                className="underline"
+              >
                 Sign in
               </Link>{" "}
-              to contact the owner
+              as a tenant to book or save this home
+            </p>
+          ) : !isTenant ? (
+            <p className="text-center font-inter text-xs text-brand-dark/50">
+              Only tenant accounts can send booking requests.
             </p>
           ) : null}
         </div>

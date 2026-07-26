@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { tenantUser } from "@/features/tenant/data/tenant.mock";
+import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 import { messageConversations as initialConversations } from "@/features/tenant-messages/data/tenant-messages.mock";
 import type {
   ChatMessage,
   MessageConversation,
 } from "@/features/tenant-messages/types/tenant-messages.types";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 function ConversationRow({
   conversation,
@@ -201,6 +202,7 @@ function ChatPanel({
 }
 
 export function TenantMessagesPage() {
+  const { profile } = useAuth();
   const [conversations, setConversations] = useState(initialConversations);
   const [selectedId, setSelectedId] = useState(initialConversations[0]?.id ?? "");
   const [chatQuery, setChatQuery] = useState("");
@@ -312,15 +314,11 @@ export function TenantMessagesPage() {
                 className="size-5"
               />
             </button>
-            <div className="relative size-8 overflow-hidden rounded-2xl">
-              <Image
-                src={tenantUser.topbarAvatarSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="32px"
-              />
-            </div>
+            <ProfileAvatar
+              src={profile?.avatarUrl}
+              size="sm"
+              className="!size-8 !rounded-2xl"
+            />
           </div>
         </header>
 

@@ -1,9 +1,17 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/shared/Container";
 import { routes } from "@/config/routes";
+import { useBrowseFilters } from "@/features/browse-home/context/BrowseFiltersProvider";
+import { divisionHero } from "@/features/browse-home/lib/browse-filters";
 
 export function BrowseHomeHero() {
+  const { filters } = useBrowseFilters();
+  const hero = divisionHero(filters.division);
+  const crumb = filters.division || "Dhaka";
+
   return (
     <section className="bg-surface pt-6 sm:pt-10 lg:pt-12" aria-labelledby="browse-home-heading">
       <Container>
@@ -32,20 +40,21 @@ export function BrowseHomeHero() {
                 aria-hidden="true"
                 className="shrink-0"
               />
-              <span className="underline">Dhaka</span>
+              <span className="underline">{crumb}</span>
             </nav>
             <h1
               id="browse-home-heading"
               className="font-jakarta text-[clamp(1.5rem,4vw,2rem)] font-extrabold text-brand-dark"
             >
-              DHAKA DIVISION
+              {hero.heading}
             </h1>
           </div>
 
-          <div className="relative h-[200px] overflow-hidden rounded-2xl sm:h-[280px] lg:h-[370px]">
+          <div className="relative aspect-[1774/887] w-full overflow-hidden rounded-2xl">
             <Image
-              src="/images/browse-home/hero-dhaka-cityscape.png"
-              alt="Dhaka city skyline"
+              key={hero.imageSrc}
+              src={hero.imageSrc}
+              alt={hero.imageAlt}
               fill
               priority
               className="object-cover object-center"

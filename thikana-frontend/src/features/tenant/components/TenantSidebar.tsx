@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 import { tenantNavItems } from "@/features/tenant/data/tenant.mock";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { useDashboardSignOut } from "@/lib/auth/use-dashboard-sign-out";
@@ -28,7 +30,14 @@ export function TenantSidebar({ mobileOpen = false, onClose }: TenantSidebarProp
   const pathname = usePathname();
   const { profile } = useAuth();
   const { signingOut, signOutUser } = useDashboardSignOut({ scope: "user" });
+  const [imageFailed, setImageFailed] = useState(false);
   const displayName = profile?.fullName || profile?.email || "Tenant";
+  const avatarSrc =
+    !imageFailed && profile?.avatarUrl ? profile.avatarUrl : null;
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [profile?.avatarUrl]);
 
   return (
     <>
@@ -100,9 +109,12 @@ export function TenantSidebar({ mobileOpen = false, onClose }: TenantSidebarProp
 
         <div className="mt-auto flex flex-col gap-3 border-t border-[#e5e5e2] pt-4">
           <div className="flex items-center gap-2">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/10 font-inter text-sm font-bold text-white">
-              {displayName.slice(0, 1).toUpperCase()}
-            </div>
+            <ProfileAvatar
+              src={avatarSrc}
+              size="lg"
+              className="ring-1 ring-white/20"
+              onError={() => setImageFailed(true)}
+            />
             <div className="flex min-w-0 flex-col gap-1">
               <p className="truncate font-inter text-sm font-semibold text-white">
                 {displayName}

@@ -88,9 +88,13 @@ export type ListingListParams = {
   limit?: number;
   status?: ListingStatus;
   search?: string;
+  division?: string;
+  district?: string;
   area?: string;
   propertyType?: string;
   whoCanRent?: string;
+  beds?: number;
+  minBeds?: number;
   minPrice?: number;
   maxPrice?: number;
   sortBy?: "createdAt" | "monthlyRent" | "views" | "approvedAt";

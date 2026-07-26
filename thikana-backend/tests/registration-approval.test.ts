@@ -141,33 +141,33 @@ describe("registration + approval + authorization", () => {
     expect(await User.countDocuments({ email: "idem@example.com" })).toBe(1);
   });
 
-  it("stores full owner registration data including Cloudinary refs", async () => {
+  it("stores full owner registration data including media asset refs", async () => {
     authAs("uid-owner-full", "ownerfull@example.com", true);
 
     const ownershipProof = {
-      publicId: "owner/ownership-proof/deed-1",
+      publicId: "thikana/owner/ownership-proof/deed-1.jpg",
       resourceType: "image" as const,
       format: "jpg",
       bytes: 120_000,
-      secureUrl: "https://res.cloudinary.com/demo/image/authenticated/s--x--/owner/ownership-proof/deed-1.jpg",
+      secureUrl: "https://cdn.test/thikana/owner/ownership-proof/deed-1.jpg",
       uploadedAt: new Date().toISOString(),
     };
 
     const identityDocuments = {
       nidFront: {
-        publicId: "identity/nid-front/a",
+        publicId: "thikana/identity/nid-front/test.jpg",
         resourceType: "image" as const,
-        secureUrl: "https://res.cloudinary.com/demo/image/authenticated/s--x--/identity/nid-front/a.jpg",
+        secureUrl: "https://cdn.test/thikana/identity/nid-front/test.jpg",
       },
       nidBack: {
-        publicId: "identity/nid-back/a",
+        publicId: "thikana/identity/nid-back/test.jpg",
         resourceType: "image" as const,
-        secureUrl: "https://res.cloudinary.com/demo/image/authenticated/s--x--/identity/nid-back/a.jpg",
+        secureUrl: "https://cdn.test/thikana/identity/nid-back/test.jpg",
       },
       selfie: {
-        publicId: "identity/selfie/a",
+        publicId: "thikana/identity/selfie/test.jpg",
         resourceType: "image" as const,
-        secureUrl: "https://res.cloudinary.com/demo/image/authenticated/s--x--/identity/selfie/a.jpg",
+        secureUrl: "https://cdn.test/thikana/identity/selfie/test.jpg",
       },
     };
 
@@ -223,9 +223,8 @@ describe("registration + approval + authorization", () => {
     // Pending resubmit should overwrite owner profile fields.
     const updatedProof = {
       ...ownershipProof,
-      publicId: "owner/ownership-proof/deed-2",
-      secureUrl:
-        "https://res.cloudinary.com/demo/image/authenticated/s--y--/owner/ownership-proof/deed-2.jpg",
+      publicId: "thikana/owner/ownership-proof/deed-2.jpg",
+      secureUrl: "https://cdn.test/thikana/owner/ownership-proof/deed-2.jpg",
     };
     const second = await request(app)
       .post("/api/auth/register")

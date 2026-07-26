@@ -89,6 +89,12 @@ export function TenantVerifyIdentityForm({
     setRestored(true);
   }, [hydrated, restored, state.commonData.identityDocuments]);
 
+  // Keep wizard/sessionStorage in sync after local asset changes (not during render).
+  useEffect(() => {
+    if (!hydrated || !restored) return;
+    setIdentityDocuments(assets);
+  }, [assets, hydrated, restored, setIdentityDocuments]);
+
   const handleFileChange = async (slot: UploadSlot, fileList: FileList | null) => {
     const file = fileList?.[0];
     if (!file) return;
@@ -118,14 +124,10 @@ export function TenantVerifyIdentityForm({
         folder: slotToFolder[slot],
         resourceType: "image",
       });
-      setAssets((current) => {
-        const next = {
-          ...current,
-          [slotToKey[slot]]: uploaded,
-        };
-        setIdentityDocuments(next);
-        return next;
-      });
+      setAssets((current) => ({
+        ...current,
+        [slotToKey[slot]]: uploaded,
+      }));
     } catch (err) {
       setFileNames((current) => ({ ...current, [slot]: undefined }));
       setPreviews((current) => {
@@ -136,7 +138,6 @@ export function TenantVerifyIdentityForm({
       setAssets((current) => {
         const next = { ...current };
         delete next[slotToKey[slot]];
-        setIdentityDocuments(next);
         return next;
       });
       setError(err instanceof Error ? err.message : "Could not upload document");

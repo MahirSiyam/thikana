@@ -4,11 +4,3 @@ export type TenantNavItem = {
   iconSrc: string;
   href?: string;
 };
-
-export type TenantUser = {
-  name: string;
-  firstName: string;
-  roleBadge: string;
-  avatarSrc: string;
-  topbarAvatarSrc: string;
-};

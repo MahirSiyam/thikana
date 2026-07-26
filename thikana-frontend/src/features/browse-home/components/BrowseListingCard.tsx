@@ -2,27 +2,90 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BrowseHouseListing } from "@/features/browse-home/types/browse-home.types";
 import { routes } from "@/config/routes";
+import { ApiError } from "@/lib/api/client";
+import {
+  checkSavedHome,
+  removeSavedHome,
+  saveHome,
+} from "@/lib/api/saved-homes";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 type BrowseListingCardProps = {
   listing: BrowseHouseListing;
 };
 
 export function BrowseListingCard({ listing }: BrowseListingCardProps) {
+  const { firebaseUser, profile } = useAuth();
   const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const isTenant = profile?.role === "tenant";
+  const remoteImage = listing.imageSrc.startsWith("http");
+
+  useEffect(() => {
+    if (!firebaseUser || !isTenant) {
+      setSaved(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const isSaved = await checkSavedHome(listing.id);
+        if (!cancelled) setSaved(isSaved);
+      } catch {
+        if (!cancelled) setSaved(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [firebaseUser, isTenant, listing.id]);
+
+  const toggleSave = async () => {
+    if (!firebaseUser) {
+      window.location.href = `${routes.signIn}?next=${encodeURIComponent(routes.browseHome)}`;
+      return;
+    }
+    if (!isTenant) return;
+    setBusy(true);
+    try {
+      if (saved) {
+        await removeSavedHome(listing.id);
+        setSaved(false);
+      } else {
+        await saveHome(listing.id);
+        setSaved(true);
+      }
+    } catch (err) {
+      console.error(
+        err instanceof ApiError ? err.message : "Could not update saved home"
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <article className="flex w-full flex-col overflow-hidden rounded-[10px] bg-white shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-      <div className="relative h-40 w-full shrink-0">
-        <Image
-          src={listing.imageSrc}
-          alt={listing.title}
-          fill
-          className="rounded-t-[10px] object-cover"
-          sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 295px"
-        />
+      <div className="relative h-40 w-full shrink-0 bg-[#f5f5f3]">
+        {remoteImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={listing.imageSrc}
+            alt={listing.title}
+            className="size-full rounded-t-[10px] object-cover"
+          />
+        ) : (
+          <Image
+            src={listing.imageSrc}
+            alt={listing.title}
+            fill
+            className="rounded-t-[10px] object-cover"
+            sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 295px"
+          />
+        )}
 
         <div className="absolute left-3 top-3">
           <span className="inline-flex rounded-full bg-black px-2.5 py-1 font-inter text-[11px] font-semibold text-white">
@@ -30,22 +93,25 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
           </span>
         </div>
 
-        <button
-          type="button"
-          aria-label={saved ? "Remove bookmark" : "Bookmark listing"}
-          aria-pressed={saved}
-          onClick={() => setSaved((value) => !value)}
-          className="absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-2xl border border-[#e5e5e2] bg-white transition-colors hover:bg-surface"
-        >
-          <Image
-            src="/images/browse-home/icon-bookmark.svg"
-            alt=""
-            width={16}
-            height={16}
-            aria-hidden="true"
-            className={saved ? "opacity-100" : "opacity-80"}
-          />
-        </button>
+        {isTenant || !firebaseUser ? (
+          <button
+            type="button"
+            aria-label={saved ? "Remove bookmark" : "Bookmark listing"}
+            aria-pressed={saved}
+            disabled={busy}
+            onClick={() => void toggleSave()}
+            className="absolute right-3 top-3 inline-flex size-8 items-center justify-center rounded-2xl border border-[#e5e5e2] bg-white transition-colors hover:bg-surface disabled:opacity-60"
+          >
+            <Image
+              src="/images/browse-home/icon-bookmark.svg"
+              alt=""
+              width={16}
+              height={16}
+              aria-hidden="true"
+              className={saved ? "opacity-100" : "opacity-80"}
+            />
+          </button>
+        ) : null}
 
         {listing.verified ? (
           <div className="absolute bottom-2 left-3">
@@ -112,8 +178,7 @@ export function BrowseListingCard({ listing }: BrowseListingCardProps) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3">
-          <p className="font-inter text-xs text-[#9ca3af]">({listing.reviewCount} reviews)</p>
+        <div className="flex items-center justify-end gap-3">
           <Link
             href={
               listing.slug

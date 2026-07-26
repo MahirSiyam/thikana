@@ -12,4 +12,4 @@ export type BrowseHouseListing = {
   slug: string;
 };
 
-export type FilterCategory = "Family" | "Bachelor" | "Student";
+export type FilterCategory = "Family" | "Bachelor" | "Any";

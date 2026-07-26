@@ -286,7 +286,9 @@ export const registerUser = async (input: {
         duplicateEmail.accountStatus === "pending" ||
         duplicateEmail.approvalStatus === "rejected";
       if (canRefresh) {
-        return toSafeUser(await syncPendingRegistration(duplicateEmail, input));
+        return toSafeUser(
+          await syncPendingRegistration(duplicateEmail, input)
+        );
       }
       return toSafeUser(duplicateEmail);
     }
