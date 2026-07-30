@@ -89,6 +89,35 @@ export function TenantBasicInfoForm({
     setEmailField((current) => current || firebaseUser.email || "");
   }, [firebaseUser]);
 
+  // Persist basics while typing so reload does not wipe the form (never store password).
+  useEffect(() => {
+    if (!hydrated || !restored) return;
+    setRole(role);
+    setEmail(email.trim());
+    patchCommonData({
+      fullName: fullName,
+      phone: mobile,
+      address: {
+        division: division || undefined,
+        district: district || undefined,
+        area: area || undefined,
+      },
+    });
+  }, [
+    area,
+    district,
+    division,
+    email,
+    fullName,
+    hydrated,
+    mobile,
+    patchCommonData,
+    restored,
+    role,
+    setEmail,
+    setRole,
+  ]);
+
   const saveWizardBasics = () => {
     setRole(role);
     setEmail(email.trim());

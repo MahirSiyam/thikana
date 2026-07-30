@@ -104,7 +104,9 @@ export const getFullProfile = async (user: UserDocument) => {
           yearsOfExperience: profile.yearsOfExperience ?? null,
           serviceAreas: profile.serviceAreas ?? [],
           bio: profile.bio ?? null,
-          tradeCertificateUrl: signedUrl(profile.tradeCertificate as AssetLike),
+          tradeCertificateUrl: signedUrl(
+            profile.tradeCertificate as AssetLike
+          ),
         }
       : null;
   }
@@ -199,6 +201,22 @@ export const updateProfile = async (
       }
       await ownerProfile.save();
     }
+  }
+
+  if (user.role === "tenant") {
+    const tenantProfile =
+      (await TenantProfile.findOne({ userId: user._id })) ||
+      (await TenantProfile.create({ userId: user._id }));
+    if (input.lookingAs !== undefined) {
+      tenantProfile.lookingAs = input.lookingAs || undefined;
+    }
+    if (input.preferredLocation !== undefined) {
+      tenantProfile.preferredLocation = input.preferredLocation || undefined;
+    }
+    if (input.budgetRange !== undefined) {
+      tenantProfile.budgetRange = input.budgetRange || undefined;
+    }
+    await tenantProfile.save();
   }
 
   return getFullProfile(user);

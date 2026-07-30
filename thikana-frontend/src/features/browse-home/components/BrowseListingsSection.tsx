@@ -1,10 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BrowseFilterBar } from "@/features/browse-home/components/BrowseFilterBar";
 import { BrowseFiltersSidebar } from "@/features/browse-home/components/BrowseFiltersSidebar";
 import { BrowseListingCard } from "@/features/browse-home/components/BrowseListingCard";
 import { BrowsePagination } from "@/features/browse-home/components/BrowsePagination";
+import { useBrowseFilters } from "@/features/browse-home/context/BrowseFiltersProvider";
+import {
+  browseFiltersToApiParams,
+  BROWSE_SORT_OPTIONS,
+} from "@/features/browse-home/lib/browse-filters";
 import type { BrowseHouseListing } from "@/features/browse-home/types/browse-home.types";
 import { Container } from "@/components/shared/Container";
 import { ApiError } from "@/lib/api/client";
@@ -19,64 +23,70 @@ function toBrowseCard(listing: ListingDto): BrowseHouseListing {
   return {
     id: listing.id,
     title: listing.title,
-    location: `${listing.address.area}, ${listing.address.district}`,
+    location: [listing.address.area, listing.address.district, listing.address.division]
+      .filter(Boolean)
+      .join(", "),
     priceLabel: `BDT ${listing.monthlyRent.toLocaleString("en-US")}/mo`,
     beds: listing.beds,
     baths: listing.baths,
     sqft: listing.sizeSqft,
     reviewCount: 0,
     verified: listing.status === "live",
-    imageSrc: listing.coverImageUrl || FALLBACK_IMAGE,
+    imageSrc:
+      listing.coverImageUrl ||
+      listing.images[0]?.secureUrl ||
+      FALLBACK_IMAGE,
     slug: listing.slug,
   };
 }
 
 export function BrowseListingsSection() {
+  const { filters, setPage, setSort } = useBrowseFilters();
   const [listings, setListings] = useState<BrowseHouseListing[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (nextPage: number) => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await browsePublicListings({
-        page: nextPage,
-        limit: 12,
-        sortBy: "createdAt",
-        sortOrder: "desc",
-      });
+      const response = await browsePublicListings(
+        browseFiltersToApiParams(filters)
+      );
       setListings((response.data || []).map(toBrowseCard));
       setTotal(response.pagination?.total || 0);
       setTotalPages(response.pagination?.totalPages || 1);
-      setPage(response.pagination?.page || nextPage);
     } catch (err) {
       setError(
         err instanceof ApiError || err instanceof Error
           ? err.message
           : "Could not load listings"
       );
+      setListings([]);
+      setTotal(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      void load(1);
+      void load();
     }, 0);
     return () => window.clearTimeout(timeout);
   }, [load]);
+
+  const sortLabel =
+    BROWSE_SORT_OPTIONS.find((item) => item.id === filters.sort)?.label ||
+    "Newest";
 
   return (
     <section className="bg-surface py-8 sm:py-12 lg:py-[79px]" aria-labelledby="homes-found-heading">
       <Container>
         <div className="flex flex-col gap-8">
-          <BrowseFilterBar />
-
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
             <BrowseFiltersSidebar />
 
@@ -88,18 +98,32 @@ export function BrowseListingsSection() {
                       id="homes-found-heading"
                       className="font-inter text-[clamp(1.375rem,3vw,1.75rem)] font-semibold text-brand-dark"
                     >
-                      Homes Found in Dhaka
+                      Homes Found in {filters.division || "Bangladesh"}
                     </h2>
                     <p className="font-inter text-sm text-[#6b7280]">
                       {loading
                         ? "Loading properties…"
-                        : `${total} properties match your criteria`}
+                        : `${total} ${total === 1 ? "property matches" : "properties match"} your criteria`}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 font-inter text-sm">
+                  <label className="flex items-center gap-2 font-inter text-sm">
                     <span className="text-[#6b7280]">Sort by:</span>
-                    <span className="font-semibold text-brand-dark">Newest</span>
-                  </div>
+                    <select
+                      value={filters.sort}
+                      onChange={(event) =>
+                        setSort(event.target.value as typeof filters.sort)
+                      }
+                      className="rounded-md border border-[#e5e5e2] bg-white px-2 py-1 font-semibold text-brand-dark outline-none focus-visible:ring-2 focus-visible:ring-brand-dark"
+                      aria-label="Sort listings"
+                    >
+                      {BROWSE_SORT_OPTIONS.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="sr-only">{sortLabel}</span>
+                  </label>
                 </div>
 
                 {error ? (
@@ -110,7 +134,7 @@ export function BrowseListingsSection() {
 
                 {!loading && !error && listings.length === 0 ? (
                   <p className="font-inter text-sm text-[#6b7280]">
-                    No live listings yet. Approved owner listings will appear here.
+                    No live listings match these filters. Try another division or clear some filters.
                   </p>
                 ) : null}
 
@@ -125,13 +149,11 @@ export function BrowseListingsSection() {
 
               {totalPages > 1 ? (
                 <BrowsePagination
-                  page={page}
+                  page={filters.page}
                   totalPages={totalPages}
-                  onPageChange={(next) => void load(next)}
+                  onPageChange={setPage}
                 />
-              ) : (
-                <BrowsePagination />
-              )}
+              ) : null}
             </div>
           </div>
         </div>

@@ -17,6 +17,7 @@ export const formDraftKeys = {
   adminSignInEmail: "thikana-form:admin-signin-email",
   adminSiteSettings: "thikana-form:admin-site-settings",
   ownerProfileEdit: "thikana-form:owner-profile-edit",
+  tenantProfileEdit: "thikana-form:tenant-profile-edit",
   serviceProviderProfile: "thikana-form:sp-service-profile",
   providerBooking: "thikana-form:provider-booking",
 } as const;

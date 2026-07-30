@@ -28,6 +28,9 @@ export const updateProfileSchema = z.object({
     .optional(),
   preferredContactMethod: z.enum(["phone", "whatsapp", "in-app"]).optional(),
   propertyCount: z.string().trim().max(40).optional(),
+  lookingAs: z.enum(["family", "bachelor", "student"]).optional().nullable(),
+  preferredLocation: z.string().trim().max(120).optional().nullable(),
+  budgetRange: z.string().trim().max(80).optional().nullable(),
   profileImage: cloudinaryAssetSchema.optional().nullable(),
 });
 

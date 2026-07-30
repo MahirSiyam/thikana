@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 const navPillBaseClasses =
-  "inline-flex h-11 shrink-0 items-center justify-center gap-1 rounded-(--nav-pill-radius) border border-brand-dark px-3 text-sm font-medium leading-normal whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 md:h-[52px] md:px-3.5 md:text-[15px] lg:h-[59px] lg:px-4 lg:text-base";
+  "inline-flex h-11 shrink-0 items-center justify-center gap-1 rounded-(--nav-pill-radius) border border-brand-dark px-3 text-sm font-medium leading-normal whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 md:h-[52px] md:px-3.5 md:text-[15px] lg:h-12 lg:px-3 lg:text-sm xl:h-[54px] xl:px-3.5 xl:text-[15px] 2xl:h-[59px] 2xl:px-4 2xl:text-base";
 
 type NavPillProps = {
   label: string;
@@ -77,7 +77,7 @@ export function NavPillList({
   className?: string;
 }) {
   return (
-    <ul className={`flex flex-wrap items-center gap-2 md:gap-3 lg:gap-4 xl:gap-6 ${className}`}>
+    <ul className={`flex flex-wrap items-center gap-2 md:gap-3 lg:gap-2 xl:gap-3 2xl:gap-4 ${className}`}>
       {children}
     </ul>
   );

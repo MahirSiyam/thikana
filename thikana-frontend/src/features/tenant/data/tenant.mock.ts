@@ -1,5 +1,5 @@
 import { routes } from "@/config/routes";
-import type { TenantNavItem, TenantUser } from "@/features/tenant/types/tenant.types";
+import type { TenantNavItem } from "@/features/tenant/types/tenant.types";
 
 export const tenantNavItems: TenantNavItem[] = [
   {
@@ -45,11 +45,3 @@ export const tenantNavItems: TenantNavItem[] = [
     href: routes.tenantProfile,
   },
 ];
-
-export const tenantUser: TenantUser = {
-  name: "Masum Rahman",
-  firstName: "Masum",
-  roleBadge: "Tenant",
-  avatarSrc: "/images/tenant/avatar-sidebar.png",
-  topbarAvatarSrc: "/images/tenant/avatar-topbar.png",
-};

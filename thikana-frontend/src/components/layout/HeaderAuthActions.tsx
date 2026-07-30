@@ -65,12 +65,14 @@ function GuestAuthActions({
     <div className={`flex shrink-0 items-center justify-end gap-1.5 sm:gap-2 ${className}`}>
       {headerAuthActions.map((action) => {
         const textClassName = `whitespace-nowrap px-1.5 font-semibold text-brand-dark transition-colors hover:text-brand-dark/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
-          compact ? "py-2 text-sm" : "py-2 text-sm md:py-3 md:text-[15px] lg:py-5 lg:text-base"
+          compact
+            ? "py-2 text-sm"
+            : "py-2 text-sm md:py-3 md:text-[15px] lg:py-3 lg:text-sm xl:py-4 xl:text-[15px] 2xl:py-5 2xl:text-base"
         }`;
         const primaryClassName = `inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-(--nav-pill-radius) bg-brand-dark font-bold text-brand-light-text transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
           compact
             ? "h-11 min-w-[88px] px-3 text-sm"
-            : "h-11 min-w-[88px] px-3 text-sm md:h-[52px] md:min-w-[92px] md:text-[15px] lg:h-[59px] lg:min-w-[100px] lg:px-5 lg:text-base"
+            : "h-11 min-w-[88px] px-3 text-sm md:h-[52px] md:min-w-[92px] md:text-[15px] lg:h-12 lg:min-w-[88px] lg:text-sm xl:h-[54px] xl:min-w-[94px] xl:px-4 xl:text-[15px] 2xl:h-[59px] 2xl:min-w-[100px] 2xl:px-5 2xl:text-base"
         }`;
 
         if (action.variant === "text") {
@@ -166,7 +168,9 @@ function SignedInAuthMenu({
         aria-label={`${displayName} account menu`}
         onClick={() => setOpen((value) => !value)}
         className={`inline-flex items-center justify-center rounded-full transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
-          compact ? "size-11" : "size-11 md:size-[52px] lg:size-[59px]"
+          compact
+            ? "size-11"
+            : "size-11 md:size-13 lg:size-12 xl:size-13.5 2xl:size-14.75"
         }`}
       >
         <ProfileAvatar
@@ -175,7 +179,7 @@ function SignedInAuthMenu({
           className={
             compact
               ? "size-10!"
-              : "size-10! md:size-12! lg:size-14!"
+              : "size-10! md:size-12! lg:size-11! xl:size-12! 2xl:size-14!"
           }
           onError={() => setImageFailed(true)}
         />
@@ -273,7 +277,9 @@ export function HeaderAuthActions({
       >
         <div
           className={`animate-pulse rounded-(--nav-pill-radius) bg-brand-dark/10 ${
-            compact ? "h-11 w-24" : "h-11 w-28 md:h-[52px] lg:h-[59px]"
+            compact
+              ? "h-11 w-24"
+              : "h-11 w-28 md:h-13 lg:h-12 xl:h-13.5 2xl:h-14.75"
           }`}
         />
       </div>

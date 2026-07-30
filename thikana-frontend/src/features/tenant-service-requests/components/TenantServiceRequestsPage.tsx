@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 import { routes } from "@/config/routes";
 import { DEFAULT_PROVIDER_SLUG } from "@/features/service-provider-details/data/service-provider-details.mock";
-import { tenantUser } from "@/features/tenant/data/tenant.mock";
 import {
   serviceRequests,
   serviceRequestsPaginationPages,
@@ -16,6 +16,7 @@ import type {
   ServiceRequestStatus,
   ServiceRequestsTabId,
 } from "@/features/tenant-service-requests/types/tenant-service-requests.types";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 const statusStyles: Record<
   ServiceRequestStatus,
@@ -159,6 +160,7 @@ function CancelledEmptyState() {
 }
 
 export function TenantServiceRequestsPage() {
+  const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<ServiceRequestsTabId>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -224,15 +226,11 @@ export function TenantServiceRequestsPage() {
                 className="size-5"
               />
             </button>
-            <div className="relative size-8 overflow-hidden rounded-2xl">
-              <Image
-                src={tenantUser.topbarAvatarSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="32px"
-              />
-            </div>
+            <ProfileAvatar
+              src={profile?.avatarUrl}
+              size="sm"
+              className="!size-8 !rounded-2xl"
+            />
           </div>
         </header>
 

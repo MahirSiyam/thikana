@@ -49,6 +49,9 @@ export type UpdateProfilePayload = {
   };
   preferredContactMethod?: "phone" | "whatsapp" | "in-app";
   propertyCount?: string;
+  lookingAs?: "family" | "bachelor" | "student" | null;
+  preferredLocation?: string | null;
+  budgetRange?: string | null;
   profileImage?: {
     publicId: string;
     resourceType?: "image" | "raw";

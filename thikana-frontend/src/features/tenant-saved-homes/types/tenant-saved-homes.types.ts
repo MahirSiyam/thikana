@@ -1,5 +1,7 @@
 export type SavedHome = {
   id: string;
+  listingId: string;
+  slug: string;
   title: string;
   location: string;
   price: string;

@@ -8,9 +8,10 @@ export function HeroSearchBar() {
   const [activeTab, setActiveTab] = useState<SearchTab>("home");
 
   return (
-    <div className="w-full overflow-hidden rounded-(--radius-card) bg-white shadow-[0_4px_5px_rgba(10,10,10,0.1)]">
-      <div className="border-b border-[#d9d9d9] px-3 pt-[10px] sm:px-4 md:px-7">
-        <div className="flex gap-2 overflow-x-auto sm:gap-3 md:gap-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="w-full overflow-hidden rounded-card bg-white shadow-[0_4px_5px_rgba(10,10,10,0.1)]">
+      {/* Tabs — Figma: pl-27 pt-10, 15px text */}
+      <div className="border-b border-[#d9d9d9] px-3 pt-2 sm:px-4 sm:pt-2.5 md:px-5 lg:px-6.5">
+        <div className="scrollbar-none flex gap-2.5 overflow-x-auto sm:gap-3 md:gap-4 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <TabButton
             active={activeTab === "home"}
             onClick={() => setActiveTab("home")}
@@ -28,7 +29,8 @@ export function HeroSearchBar() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 px-3 py-4 sm:gap-4 sm:px-4 sm:py-5 md:flex-row md:items-center md:gap-5 md:px-[26px] md:py-8 lg:gap-7">
+      {/* Fields — Figma desktop: horizontal row; stack below lg */}
+      <div className="flex flex-col gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-4 md:gap-4 md:px-5 md:py-5 lg:flex-row lg:items-center lg:gap-7 lg:px-6.5 lg:py-8">
         {activeTab === "home" ? (
           <>
             <SearchField
@@ -50,17 +52,36 @@ export function HeroSearchBar() {
           </>
         ) : (
           <>
-            <SearchField iconSrc="/images/home/icon-map-pin.svg" label="Location" value="Dhaka, Bangladesh" />
-            <SearchField iconSrc="/images/home/icon-building.svg" label="Service Type" value="Home Repair" />
-            <SearchField iconSrc="/images/home/icon-budget.svg" label="Budget Range" value="৳500 – ৳5,000" isLast />
+            <SearchField
+              iconSrc="/images/home/icon-map-pin.svg"
+              label="Location"
+              value="Dhaka, Bangladesh"
+            />
+            <SearchField
+              iconSrc="/images/home/icon-building.svg"
+              label="Service Type"
+              value="Home Repair"
+            />
+            <SearchField
+              iconSrc="/images/home/icon-budget.svg"
+              label="Budget Range"
+              value="৳500 – ৳5,000"
+              isLast
+            />
           </>
         )}
 
         <button
           type="button"
-          className="inline-flex h-[48px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-(--nav-pill-radius) bg-brand-dark px-4 font-jakarta text-sm font-bold text-white sm:h-[52px] sm:text-[15px] md:h-[59px] md:w-[124px]"
+          className="inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-(--nav-pill-radius) bg-brand-dark px-4 font-jakarta text-sm font-bold text-white sm:h-13 sm:text-[15px] lg:h-14.75 lg:w-31"
         >
-          <Image src="/images/home/icon-search.svg" alt="" width={18} height={18} aria-hidden="true" />
+          <Image
+            src="/images/home/icon-search.svg"
+            alt=""
+            width={18}
+            height={18}
+            aria-hidden="true"
+          />
           Search
         </button>
       </div>
@@ -86,13 +107,17 @@ function TabButton({
       className={`flex flex-col items-center ${active ? "gap-3" : "pb-3.5"}`}
     >
       <span
-        className={`whitespace-nowrap text-sm md:text-[15px] ${
-          active ? `${activeFont} font-bold text-brand-dark` : "font-inter font-normal text-brand-dark"
+        className={`whitespace-nowrap text-sm sm:text-[15px] ${
+          active
+            ? `${activeFont} font-bold text-brand-dark`
+            : "font-inter font-normal text-brand-dark"
         }`}
       >
         {children}
       </span>
-      {active ? <span className="h-0.5 w-full rounded-t bg-brand-dark" aria-hidden="true" /> : null}
+      {active ? (
+        <span className="h-0.5 w-full rounded-t bg-brand-dark" aria-hidden="true" />
+      ) : null}
     </button>
   );
 }
@@ -111,16 +136,25 @@ function SearchField({
   return (
     <button
       type="button"
-      className={`flex w-full min-w-0 items-center gap-3 px-1 py-1 text-left md:flex-1 md:px-5 ${
-        isLast ? "border-b-0 md:border-r-0" : "border-b border-brand-dark/10 pb-4 md:border-b-0 md:border-r md:pb-0 md:pr-5"
+      className={`flex w-full min-w-0 items-center gap-3 px-0 py-1 text-left sm:gap-3 lg:min-w-42.5 lg:flex-1 lg:px-5 ${
+        isLast
+          ? "border-b-0 lg:border-r-0"
+          : "border-b border-brand-dark/10 pb-2.5 sm:pb-3 md:pb-4 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-5"
       }`}
     >
-      <Image src={iconSrc} alt="" width={18} height={18} aria-hidden="true" className="shrink-0" />
+      <Image
+        src={iconSrc}
+        alt=""
+        width={18}
+        height={18}
+        aria-hidden="true"
+        className="size-4.5 shrink-0"
+      />
       <span className="min-w-0 flex-1">
-        <span className="block font-inter text-[10px] font-bold uppercase text-brand-dark">
+        <span className="block font-inter text-[10px] font-bold uppercase leading-normal text-brand-dark">
           {label}
         </span>
-        <span className="block truncate font-inter text-[clamp(13px,3.5vw,15px)] font-medium text-brand-dark">
+        <span className="block truncate font-inter text-[13px] font-medium leading-normal text-brand-dark sm:text-[15px]">
           {value}
         </span>
       </span>
@@ -130,7 +164,7 @@ function SearchField({
         width={14}
         height={14}
         aria-hidden="true"
-        className="shrink-0"
+        className="size-3.5 shrink-0"
       />
     </button>
   );

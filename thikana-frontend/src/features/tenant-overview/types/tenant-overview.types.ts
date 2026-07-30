@@ -15,6 +15,7 @@ export type BookingRequestStatus =
   | "Approved"
   | "Pending"
   | "Declined"
+  | "Cancelled"
   | "Under Review";
 
 export type BookingRequest = {
@@ -29,6 +30,7 @@ export type BookingRequest = {
   actionLabel: string;
   actionVariant: "button" | "link";
   highlight?: boolean;
+  listingSlug?: string | null;
 };
 
 export type RecommendedHome = {
@@ -40,6 +42,8 @@ export type RecommendedHome = {
   beds: number;
   baths: number;
   sqft: string;
+  slug?: string;
+  listingId?: string;
 };
 
 export type UpcomingService = {
