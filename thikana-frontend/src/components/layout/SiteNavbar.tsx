@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HeaderAuthActions } from "@/components/layout/HeaderAuthActions";
 import { NavPill, NavPillList } from "@/components/layout/NavPill";
+import { SiteLogoLink } from "@/components/layout/SiteLogoLink";
 import { headerNavigation } from "@/config/navigation";
-import { routes } from "@/config/routes";
 
 function useHeaderNavItems() {
   const pathname = usePathname();
@@ -17,17 +17,21 @@ function useHeaderNavItems() {
       item.variant === "link" && item.href !== undefined && pathname === item.href;
 
     if (item.variant === "link" && item.href) {
+      const hasChevron =
+        item.label === "Browse Houses" || item.label === "Services";
+
       return (
         <NavPill
           label={item.label}
           href={item.href}
           isActive={isActive}
+          hasChevron={hasChevron}
           onClick={onNavigate}
           className={
             onNavigate
               ? "w-full justify-center"
               : item.label === "Browse Houses"
-                ? "min-w-[7.5rem] justify-center md:min-w-[8.75rem] lg:min-w-[168px]"
+                ? "min-w-30 justify-center md:min-w-35 lg:min-w-36 xl:min-w-40 2xl:min-w-42"
                 : undefined
           }
         />
@@ -64,21 +68,20 @@ export function DesktopNav() {
   const { renderNavItem } = useHeaderNavItems();
 
   return (
-    <div className="hidden min-w-0 md:flex md:w-full md:items-center md:justify-between md:gap-3 lg:gap-4 xl:gap-6">
+    <div className="hidden min-w-0 flex-1 lg:flex lg:items-center lg:justify-between lg:gap-2 xl:gap-4 2xl:gap-6">
       <nav aria-label="Main" className="min-w-0 flex-1">
-        <div className="overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
-          <NavPillList className="w-max md:w-auto md:flex-wrap">
+        <div className="scrollbar-none overflow-x-auto pb-0.5 [-ms-overflow-style:none] lg:overflow-visible lg:pb-0 [&::-webkit-scrollbar]:hidden">
+          <NavPillList className="w-max lg:w-auto lg:flex-nowrap">
             {headerNavigation.map((item) => (
               <li key={item.label}>{renderNavItem(item)}</li>
             ))}
           </NavPillList>
         </div>
       </nav>
-      <HeaderAuthActions className="ml-2 lg:ml-4" />
+      <HeaderAuthActions className="ml-1 xl:ml-2 2xl:ml-4" />
     </div>
   );
 }
-
 export function MobileNavBar() {
   const [isOpen, setIsOpen] = useState(false);
   const { renderNavItem, setOpenDropdown } = useHeaderNavItems();
@@ -96,14 +99,14 @@ export function MobileNavBar() {
   }, [isOpen]);
 
   return (
-    <div className="flex w-full items-center justify-between gap-3 md:hidden">
+    <div className="relative flex items-center justify-between gap-2 lg:hidden">
       <button
         type="button"
         aria-expanded={isOpen}
         aria-controls="mobile-nav-menu"
         aria-label={isOpen ? "Close menu" : "Open menu"}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-(--nav-pill-radius) border border-brand-dark text-brand-dark transition-colors hover:bg-brand-dark/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-(--nav-pill-radius) border border-brand-dark text-brand-dark transition-colors hover:bg-brand-dark/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
       >
         <svg
           aria-hidden="true"
@@ -120,6 +123,10 @@ export function MobileNavBar() {
           )}
         </svg>
       </button>
+      <SiteLogoLink
+        className="absolute left-1/2 -translate-x-1/2"
+        imageClassName="size-10 sm:size-12"
+      />
       <HeaderAuthActions compact onActionClick={closeMenu} />
       {isOpen ? (
         <>
@@ -143,16 +150,5 @@ export function MobileNavBar() {
         </>
       ) : null}
     </div>
-  );
-}
-
-export function SiteLogoLink() {
-  return (
-    <Link
-      href={routes.home}
-      className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-(--nav-pill-radius) focus:bg-brand-dark focus:px-4 focus:py-2 focus:text-white"
-    >
-      Thikana
-    </Link>
   );
 }

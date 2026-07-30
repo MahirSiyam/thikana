@@ -22,7 +22,6 @@ export const headerNavigation: HeaderNavItem[] = [
   { label: "Browse Houses", href: routes.browseHome, variant: "link" },
   { label: "Services", href: routes.services, variant: "link" },
   { label: "About", href: routes.about, variant: "link" },
-  { label: "FAQ", href: routes.faq, variant: "link" },
   { label: "Contact Us", href: routes.contactUs, variant: "link" },
 ];
 
