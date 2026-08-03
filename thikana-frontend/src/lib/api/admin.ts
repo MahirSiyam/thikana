@@ -43,6 +43,27 @@ export type AdminUserProfile = {
   tradeCertificateUrl?: string | null;
 };
 
+export type AdminListUser = MeUser & {
+  address?: {
+    division?: string;
+    district?: string;
+    area?: string;
+  };
+  approvedAt?: string | Date | null;
+  rejectedAt?: string | Date | null;
+  providerProfile?: {
+    serviceCategory?: string | null;
+    serviceAreas?: string[];
+    yearsOfExperience?: string | null;
+    hasTradeCertificate?: boolean;
+  } | null;
+  documentStatus?: {
+    nid: boolean;
+    selfie: boolean;
+    cert: boolean;
+  };
+};
+
 export type AdminUserDetails = {
   user: MeUser & {
     address?: {
@@ -79,11 +100,11 @@ const toQuery = (params: AdminUserListParams) => {
 };
 
 export const listAdminUsers = async (params: AdminUserListParams = {}) => {
-  const response = await adminAuthorizedFetch<MeUser[]>(
+  const response = await adminAuthorizedFetch<AdminListUser[]>(
     `/api/admin/users${toQuery(params)}`
   );
   return {
-    items: (response.data || []) as MeUser[],
+    items: (response.data || []) as AdminListUser[],
     pagination: response.pagination,
   };
 };

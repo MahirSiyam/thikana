@@ -107,6 +107,18 @@ export const getFullProfile = async (user: UserDocument) => {
           tradeCertificateUrl: signedUrl(
             profile.tradeCertificate as AssetLike
           ),
+          pricingItems: (profile.pricingItems ?? []).map(
+            (item: { _id?: unknown; name: string; priceBdt: number }) => ({
+              id: String(item._id ?? item.name),
+              name: item.name,
+              priceBdt: item.priceBdt,
+            })
+          ),
+          availabilityDays: profile.availabilityDays ?? [],
+          workingHours: {
+            start: profile.workingHours?.start || "09:00",
+            end: profile.workingHours?.end || "18:00",
+          },
         }
       : null;
   }
@@ -217,6 +229,36 @@ export const updateProfile = async (
       tenantProfile.budgetRange = input.budgetRange || undefined;
     }
     await tenantProfile.save();
+  }
+
+  if (user.role === "service_provider") {
+    const providerProfile = await ServiceProviderProfile.findOne({
+      userId: user._id,
+    });
+    if (providerProfile) {
+      if (input.serviceCategory !== undefined) {
+        providerProfile.serviceCategory = input.serviceCategory;
+      }
+      if (input.yearsOfExperience !== undefined) {
+        providerProfile.yearsOfExperience = input.yearsOfExperience;
+      }
+      if (input.serviceAreas !== undefined) {
+        providerProfile.serviceAreas = input.serviceAreas;
+      }
+      if (input.bio !== undefined) {
+        providerProfile.bio = input.bio;
+      }
+      if (input.pricingItems !== undefined) {
+        providerProfile.pricingItems = input.pricingItems as never;
+      }
+      if (input.availabilityDays !== undefined) {
+        providerProfile.availabilityDays = input.availabilityDays as never;
+      }
+      if (input.workingHours !== undefined) {
+        providerProfile.workingHours = input.workingHours as never;
+      }
+      await providerProfile.save();
+    }
   }
 
   return getFullProfile(user);

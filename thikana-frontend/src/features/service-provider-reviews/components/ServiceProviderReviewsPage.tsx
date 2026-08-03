@@ -1,51 +1,73 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { serviceProviderUser } from "@/features/service-provider/data/service-provider.mock";
+import { useCallback, useEffect, useState } from "react";
+import { ProviderTopbar } from "@/features/service-provider/components/ProviderTopbar";
 import {
-  reviewSortOptions,
-  reviewsDateRangeLabel,
-  reviewsSummary,
-  reviewsTotalPages,
-  serviceProviderReviews,
-} from "@/features/service-provider-reviews/data/service-provider-reviews.mock";
-import type {
-  ReviewReplyStatus,
-  ReviewSortOption,
-  ServiceProviderReview,
-} from "@/features/service-provider-reviews/types/service-provider-reviews.types";
+  errorMessage,
+  formatDate,
+} from "@/features/service-provider/lib/format";
+import {
+  listProviderReviews,
+  replyToProviderReview,
+  serviceCategoryLabel,
+  type ProviderReviewDto,
+  type ProviderReviewSort,
+  type ProviderReviewsSummary,
+} from "@/lib/api/provider";
 
-function formatStarDisplay(rating: number): string {
-  const fullStars = Math.floor(rating);
-  const emptyStars = 5 - fullStars;
-  return `${"★".repeat(fullStars)}${"☆".repeat(emptyStars)}`;
+const sortOptions: { value: ProviderReviewSort; label: string }[] = [
+  { value: "most-recent", label: "Most Recent" },
+  { value: "highest-rated", label: "Highest Rated" },
+  { value: "lowest-rated", label: "Lowest Rated" },
+];
+
+const emptySummary: ProviderReviewsSummary = {
+  averageRating: 0,
+  totalReviews: 0,
+  distribution: [5, 4, 3, 2, 1].map((stars) => ({ stars, count: 0 })),
+};
+
+function formatStarDisplay(rating: number) {
+  const full = Math.floor(rating);
+  return `${"★".repeat(full)}${"☆".repeat(Math.max(0, 5 - full))}`;
 }
 
-function RatingSummaryCard() {
-  const { averageRating, totalReviews, distribution } = reviewsSummary;
+function RatingSummaryCard({ summary }: { summary: ProviderReviewsSummary }) {
+  const { averageRating, totalReviews, distribution } = summary;
 
   return (
     <section
       aria-label="Rating summary"
-      className="flex flex-col items-start gap-8 rounded-2xl border border-[#e5e5e2] bg-white p-6 sm:p-8 lg:flex-row lg:items-center lg:gap-20"
+      className="flex flex-col items-start gap-6 rounded-2xl border border-[#e5e5e2] bg-white p-5 sm:p-6 md:p-8 lg:flex-row lg:items-center lg:gap-20"
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline gap-2">
-          <p className="font-outfit text-[clamp(3rem,8vw,4rem)] font-bold leading-none text-brand-dark">
+          <p className="font-outfit text-[clamp(2.5rem,8vw,4rem)] font-bold leading-none text-brand-dark">
             {averageRating.toFixed(1)}
           </p>
-          <span className="font-inter text-[32px] text-[#f59e0b]" aria-hidden="true">
+          <span
+            className="font-inter text-[28px] text-[#f59e0b] sm:text-[32px]"
+            aria-hidden="true"
+          >
             ★
           </span>
-          <span className="font-inter text-xl text-[#a1a1aa]">/ 5.0</span>
+          <span className="font-inter text-lg text-[#a1a1aa] sm:text-xl">
+            / 5.0
+          </span>
         </div>
-        <p className="font-inter text-sm text-[#71717a]">Based on {totalReviews} reviews</p>
+        <p className="font-inter text-sm text-[#71717a]">
+          {totalReviews
+            ? `Based on ${totalReviews} review${totalReviews === 1 ? "" : "s"}`
+            : "No reviews yet"}
+        </p>
       </div>
 
       <ul className="flex w-full max-w-[400px] flex-1 flex-col gap-2.5">
         {distribution.map((row) => {
-          const fillPercent = totalReviews > 0 ? (row.count / totalReviews) * 100 : 0;
+          const fillPercent = totalReviews
+            ? (row.count / totalReviews) * 100
+            : 0;
 
           return (
             <li key={row.stars} className="flex items-center gap-3">
@@ -74,319 +96,293 @@ function RatingSummaryCard() {
 
 function ReviewCard({
   review,
-  onOpenComposer,
-  onPostReply,
+  busy,
+  onReply,
 }: {
-  review: ServiceProviderReview;
-  onOpenComposer: (id: string) => void;
-  onPostReply: (id: string, text: string) => void;
+  review: ProviderReviewDto;
+  busy: boolean;
+  onReply: (id: string, text: string) => Promise<void>;
 }) {
-  const [draftReply, setDraftReply] = useState("");
-  const showComposer = review.replyStatus === "composing";
-  const showExistingReply = review.replyStatus === "replied" && review.replyText;
+  const [composing, setComposing] = useState(false);
+  const [draft, setDraft] = useState("");
 
-  function handlePostReply() {
-    const trimmed = draftReply.trim();
+  const submit = async () => {
+    const trimmed = draft.trim();
     if (!trimmed) return;
-    onPostReply(review.id, trimmed);
-    setDraftReply("");
-  }
+    await onReply(review.id, trimmed);
+    setDraft("");
+    setComposing(false);
+  };
 
   return (
-    <article className="flex flex-col gap-4 rounded-xl border border-[#e5e5e2] bg-white p-5 sm:p-6">
+    <article className="flex flex-col gap-4 rounded-xl border border-[#e5e5e2] bg-white p-4 sm:p-5 md:p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-[#f4f4f5]">
-            <Image
-              src={review.reviewerAvatarSrc}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="48px"
-            />
-          </div>
+          {review.reviewerAvatarUrl ? (
+            <div className="relative size-11 shrink-0 overflow-hidden rounded-full bg-[#f4f4f5] sm:size-12">
+              <Image
+                src={review.reviewerAvatarUrl}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="48px"
+              />
+            </div>
+          ) : (
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#f4f4f5] font-inter text-sm font-bold text-[#71717a] sm:size-12">
+              {review.reviewerName.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div className="min-w-0">
-            <p className="font-inter text-[15px] font-bold text-brand-dark">
+            <p className="truncate font-inter text-sm font-bold text-brand-dark sm:text-[15px]">
               {review.reviewerName}
             </p>
-            <p className="font-inter text-[13px] text-brand-dark" aria-label={`${review.rating} out of 5 stars`}>
+            <p
+              className="font-inter text-[13px] text-brand-dark"
+              aria-label={`${review.rating} out of 5 stars`}
+            >
               {formatStarDisplay(review.rating)}
             </p>
           </div>
         </div>
-        <time className="shrink-0 font-inter text-[13px] text-[#a1a1aa]">{review.dateLabel}</time>
+        <time className="shrink-0 font-inter text-[13px] text-[#a1a1aa]">
+          {formatDate(review.createdAt)}
+        </time>
       </div>
 
       <div className="flex flex-col gap-3">
-        <p className="font-inter text-sm leading-relaxed text-[#71717a]">{review.quote}</p>
-        <span className="inline-flex w-fit rounded-full bg-[#f4f4f5] px-2.5 py-1 font-inter text-[11px] font-semibold text-[#71717a]">
-          ⚡ {review.serviceTag}
-        </span>
+        {review.comment ? (
+          <p className="font-inter text-sm leading-relaxed text-[#71717a]">
+            {review.comment}
+          </p>
+        ) : null}
+        {review.serviceCategory ? (
+          <span className="inline-flex w-fit rounded-full bg-[#f4f4f5] px-2.5 py-1 font-inter text-[11px] font-semibold text-[#71717a]">
+            {serviceCategoryLabel(review.serviceCategory)}
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-4">
-        {showExistingReply ? (
-          <p className="font-inter text-[13px] font-semibold text-[#a1a1aa]">Reply</p>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onOpenComposer(review.id)}
-            className="w-fit font-inter text-[13px] font-semibold text-brand-dark underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-          >
-            Reply
-          </button>
-        )}
-
-        {showExistingReply ? (
+        {review.replyText ? (
           <div className="rounded-lg bg-[#f5f5f3] p-4">
-            <p className="font-inter text-xs font-bold text-brand-dark">Your reply:</p>
-            <p className="mt-2 font-inter text-[13px] text-[#71717a]">{review.replyText}</p>
+            <p className="font-inter text-xs font-bold text-brand-dark">
+              Your reply:
+            </p>
+            <p className="mt-2 font-inter text-[13px] text-[#71717a]">
+              {review.replyText}
+            </p>
           </div>
-        ) : null}
-
-        {showComposer ? (
+        ) : composing ? (
           <div className="flex flex-col gap-3">
             <label className="sr-only" htmlFor={`reply-${review.id}`}>
               Write a reply to {review.reviewerName}
             </label>
             <textarea
               id={`reply-${review.id}`}
-              value={draftReply}
-              onChange={(event) => setDraftReply(event.target.value)}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
               placeholder="Write a reply..."
               rows={3}
               className="min-h-20 w-full resize-y rounded-lg border border-[#e5e5e2] bg-white p-3 font-inter text-[13px] text-brand-dark outline-none placeholder:text-[#a1a1aa] focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
             />
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
               <button
                 type="button"
-                onClick={handlePostReply}
-                disabled={!draftReply.trim()}
-                className="rounded-md bg-brand-dark px-4 py-2 font-inter text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+                onClick={() => {
+                  setComposing(false);
+                  setDraft("");
+                }}
+                className="rounded-md border border-[#e5e5e2] px-4 py-2 font-inter text-[13px] font-semibold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
               >
-                Post Reply
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void submit()}
+                disabled={!draft.trim() || busy}
+                className="rounded-md bg-brand-dark px-4 py-2 font-inter text-[13px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy ? "Posting…" : "Post Reply"}
               </button>
             </div>
           </div>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={() => setComposing(true)}
+            className="w-fit font-inter text-[13px] font-semibold text-brand-dark underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          >
+            Reply
+          </button>
+        )}
       </div>
     </article>
   );
 }
 
-function ReviewsPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}) {
-  return (
-    <nav
-      aria-label="Reviews pagination"
-      className="flex flex-wrap items-center justify-center gap-4"
-    >
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage <= 1}
-        className="font-inter text-sm font-semibold text-[#71717a] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-      >
-        ← Previous
-      </button>
-
-      {Array.from({ length: totalPages }, (_, index) => {
-        const page = index + 1;
-        const isActive = page === currentPage;
-
-        return (
-          <button
-            key={page}
-            type="button"
-            aria-current={isActive ? "page" : undefined}
-            onClick={() => onPageChange(page)}
-            className={`inline-flex size-8 items-center justify-center rounded-2xl font-inter text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
-              isActive ? "bg-brand-dark text-white" : "font-semibold text-[#71717a]"
-            }`}
-          >
-            {page}
-          </button>
-        );
-      })}
-
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage >= totalPages}
-        className="font-inter text-sm font-semibold text-brand-dark disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-      >
-        Next →
-      </button>
-    </nav>
-  );
-}
-
 export function ServiceProviderReviewsPage() {
-  const [sortBy, setSortBy] = useState<ReviewSortOption>("most-recent");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [reviews, setReviews] = useState(serviceProviderReviews);
+  const [sortBy, setSortBy] = useState<ProviderReviewSort>("most-recent");
+  const [page, setPage] = useState(1);
+  const [items, setItems] = useState<ProviderReviewDto[]>([]);
+  const [summary, setSummary] = useState<ProviderReviewsSummary>(emptySummary);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  function handleOpenComposer(id: string) {
-    setReviews((current) =>
-      current.map((review) =>
-        review.id === id && review.replyStatus !== "replied"
-          ? { ...review, replyStatus: "composing" as ReviewReplyStatus }
-          : review,
-      ),
-    );
-  }
+  const load = useCallback(async () => {
+    try {
+      const result = await listProviderReviews({ sort: sortBy, page });
+      setItems(result.items);
+      setSummary(result.summary);
+      setTotalPages(result.pagination?.totalPages || 1);
+      setError(null);
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not load your reviews"));
+    }
+  }, [sortBy, page]);
 
-  function handlePostReply(id: string, text: string) {
-    setReviews((current) =>
-      current.map((review) =>
-        review.id === id
-          ? { ...review, replyStatus: "replied", replyText: text }
-          : review,
-      ),
-    );
-  }
+  useEffect(() => {
+    let active = true;
+    void load().finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [load]);
 
-  const sortedReviews = [...reviews].sort((left, right) => {
-    if (sortBy === "highest-rated") return right.rating - left.rating;
-    if (sortBy === "lowest-rated") return left.rating - right.rating;
-    return 0;
-  });
-
-  const activeSortLabel =
-    reviewSortOptions.find((option) => option.value === sortBy)?.label ?? "Most Recent";
+  const handleReply = async (reviewId: string, text: string) => {
+    setBusyId(reviewId);
+    setError(null);
+    try {
+      await replyToProviderReview(reviewId, text);
+      await load();
+    } catch (caught) {
+      setError(errorMessage(caught, "Could not post your reply"));
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-8 lg:px-[50px] lg:py-[30px]">
       <div className="flex w-full flex-col gap-6">
-        <header className="flex flex-col gap-4 border-b border-[#e5e5e2] pb-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
-          <h1 className="font-inter text-xl font-bold text-brand-dark">Reviews</h1>
+        <ProviderTopbar
+          title="Reviews"
+          searchId="service-provider-reviews-search"
+          searchLabel="Search reviews"
+        />
 
-          <div className="flex h-10 w-full max-w-[400px] items-center gap-3 rounded-full bg-[#f4f4f5] px-4">
-            <Image
-              src="/images/service-provider/icon-search.svg"
-              alt=""
-              width={18}
-              height={18}
-              aria-hidden="true"
-              className="size-[18px] shrink-0"
-            />
-            <label className="sr-only" htmlFor="service-provider-reviews-search">
-              Search jobs, clients, or messages
-            </label>
-            <input
-              id="service-provider-reviews-search"
-              type="search"
-              placeholder="Search jobs, clients, or messages..."
-              className="min-w-0 flex-1 bg-transparent font-inter text-sm text-brand-dark outline-none placeholder:text-[#a1a1aa]"
-            />
-          </div>
+        <div className="flex flex-col gap-6 sm:gap-8">
+          <RatingSummaryCard summary={summary} />
 
-          <button
-            type="button"
-            className="inline-flex h-9 shrink-0 items-center gap-2.5 rounded-full border border-[#e5e5e2] px-4 font-inter text-[13px] font-semibold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-          >
-            <Image
-              src="/images/service-provider/icon-calendar.svg"
-              alt=""
-              width={16}
-              height={16}
-              aria-hidden="true"
-              className="size-4"
-            />
-            {reviewsDateRangeLabel}
-          </button>
-
-          <div className="flex items-center gap-5">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-            >
-              <Image
-                src="/images/service-provider/icon-bell.svg"
-                alt=""
-                width={20}
-                height={20}
-                aria-hidden="true"
-                className="size-5"
-              />
-            </button>
-            <button
-              type="button"
-              aria-label="Settings"
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-            >
-              <Image
-                src="/images/service-provider/icon-settings.svg"
-                alt=""
-                width={20}
-                height={20}
-                aria-hidden="true"
-                className="size-5"
-              />
-            </button>
-            <div className="relative size-8 overflow-hidden rounded-full">
-              <Image
-                src={serviceProviderUser.topbarAvatarSrc}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="32px"
-              />
-            </div>
-          </div>
-        </header>
-
-        <div className="flex flex-col gap-8">
-          <RatingSummaryCard />
-
-          <section className="flex flex-col gap-8">
+          <section className="flex flex-col gap-6 sm:gap-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="font-inter text-lg font-bold text-brand-dark">All Reviews</h2>
+              <h2 className="font-inter text-base font-bold text-brand-dark sm:text-lg">
+                All Reviews
+              </h2>
               <div className="flex items-center gap-2">
-                <span className="font-inter text-sm text-[#71717a]">Sort by:</span>
+                <span className="font-inter text-sm text-[#71717a]">
+                  Sort by:
+                </span>
                 <label className="sr-only" htmlFor="reviews-sort">
                   Sort reviews
                 </label>
                 <select
                   id="reviews-sort"
                   value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value as ReviewSortOption)}
+                  onChange={(event) => {
+                    setLoading(true);
+                    setSortBy(event.target.value as ProviderReviewSort);
+                    setPage(1);
+                  }}
                   className="rounded-md border border-[#e5e5e2] bg-white px-3 py-1.5 font-inter text-[13px] font-semibold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
                 >
-                  {reviewSortOptions.map((option) => (
+                  {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
-                <span className="sr-only">Currently sorted by {activeSortLabel}</span>
               </div>
             </div>
 
-            <div className="flex flex-col gap-4">
-              {sortedReviews.map((review) => (
-                <ReviewCard
-                  key={review.id}
-                  review={review}
-                  onOpenComposer={handleOpenComposer}
-                  onPostReply={handlePostReply}
-                />
-              ))}
-            </div>
+            {error ? (
+              <p className="rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4 font-inter text-sm text-[#b91c1c]">
+                {error}
+              </p>
+            ) : null}
 
-            <ReviewsPagination
-              currentPage={currentPage}
-              totalPages={reviewsTotalPages}
-              onPageChange={setCurrentPage}
-            />
+            {loading ? (
+              <p className="rounded-xl border border-[#e5e5e2] bg-white p-6 font-inter text-sm text-[#6b7280]">
+                Loading reviews…
+              </p>
+            ) : items.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-[#e5e5e2] bg-white p-8 text-center font-inter text-sm text-[#6b7280]">
+                No reviews yet. Reviews appear here once tenants rate your
+                completed jobs.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {items.map((review) => (
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                    busy={busyId === review.id}
+                    onReply={handleReply}
+                  />
+                ))}
+              </div>
+            )}
+
+            {totalPages > 1 ? (
+              <nav
+                aria-label="Reviews pagination"
+                className="flex flex-wrap items-center justify-center gap-3 sm:gap-4"
+              >
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={page <= 1}
+                  className="font-inter text-sm font-semibold text-[#71717a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  ← Previous
+                </button>
+
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const pageNumber = index + 1;
+                  const isActive = pageNumber === page;
+                  return (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      aria-current={isActive ? "page" : undefined}
+                      onClick={() => setPage(pageNumber)}
+                      className={`inline-flex size-8 items-center justify-center rounded-2xl font-inter text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 ${
+                        isActive
+                          ? "bg-brand-dark font-bold text-white"
+                          : "font-semibold text-[#71717a]"
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPage((current) => Math.min(totalPages, current + 1))
+                  }
+                  disabled={page >= totalPages}
+                  className="font-inter text-sm font-semibold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next →
+                </button>
+              </nav>
+            ) : null}
           </section>
         </div>
       </div>

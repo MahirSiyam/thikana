@@ -52,7 +52,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(100%,300px)] flex-col overflow-y-auto bg-brand-dark px-[50px] py-[30px] transition-transform lg:w-[300px] lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(100%,300px)] flex-col overflow-y-auto bg-brand-dark px-8 py-[30px] transition-transform lg:w-[300px] lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Admin navigation"
@@ -64,7 +64,7 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
             <ul className="flex flex-col gap-1">
               {adminNavItems.map((item) => {
                 const isActive = Boolean(item.href && pathname === item.href);
-                const className = `flex w-full items-center gap-3 rounded-lg px-4 py-2.5 font-inter text-sm transition-colors ${
+                const className = `flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 font-inter text-sm transition-colors ${
                   isActive
                     ? "bg-white font-semibold text-black"
                     : "bg-transparent font-normal text-white/50 hover:bg-white/5 hover:text-white/80"
@@ -82,7 +82,9 @@ export function AdminSidebar({ mobileOpen = false, onClose }: AdminSidebarProps)
                         isActive ? "brightness-0" : "brightness-0 invert opacity-50"
                       }`}
                     />
-                    <span className="min-w-0 flex-1 text-left">{item.label}</span>
+                    <span className="min-w-0 flex-1 whitespace-nowrap text-left">
+                      {item.label}
+                    </span>
                   </>
                 );
 

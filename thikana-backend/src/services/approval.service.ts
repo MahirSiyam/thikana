@@ -453,8 +453,62 @@ export const listUsersForAdmin = async (query: AdminUserListQuery) => {
     User.countDocuments(filter),
   ]);
 
+  const providerIds = items
+    .filter((user) => user.role === "service_provider")
+    .map((user) => user._id);
+
+  const providerProfiles =
+    providerIds.length > 0
+      ? await ServiceProviderProfile.find({
+          userId: { $in: providerIds },
+        }).lean()
+      : [];
+
+  const profileByUserId = new Map(
+    providerProfiles.map((profile) => [String(profile.userId), profile])
+  );
+
   return {
-    items: items.map(toSafeUser),
+    items: items.map((user) => {
+      const safe = toSafeUser(user);
+      const base = {
+        ...safe,
+        approvedAt: user.approvedAt ?? null,
+        rejectedAt: user.rejectedAt ?? null,
+      };
+
+      if (user.role !== "service_provider") {
+        return base;
+      }
+
+      const profile = profileByUserId.get(String(user._id));
+      const hasNid = Boolean(
+        (user.identityDocuments?.nidFront as AssetLike)?.publicId
+      );
+      const hasSelfie = Boolean(
+        (user.identityDocuments?.selfie as AssetLike)?.publicId
+      );
+      const hasCert = Boolean(
+        (profile?.tradeCertificate as AssetLike | undefined)?.publicId
+      );
+
+      return {
+        ...base,
+        providerProfile: profile
+          ? {
+              serviceCategory: profile.serviceCategory ?? null,
+              serviceAreas: profile.serviceAreas ?? [],
+              yearsOfExperience: profile.yearsOfExperience ?? null,
+              hasTradeCertificate: hasCert,
+            }
+          : null,
+        documentStatus: {
+          nid: hasNid,
+          selfie: hasSelfie,
+          cert: hasCert,
+        },
+      };
+    }),
     pagination: {
       page: query.page,
       limit: query.limit,

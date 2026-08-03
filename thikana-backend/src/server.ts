@@ -7,6 +7,8 @@ import adminRoutes from "./routes/admin.routes";
 import authRoutes from "./routes/auth.routes";
 import emailVerificationRoutes from "./routes/email-verification.routes";
 import listingRoutes from "./routes/listing.routes";
+import providerRoutes from "./routes/provider.routes";
+import publicProviderRoutes from "./routes/public-provider.routes";
 import tenantRoutes from "./routes/tenant.routes";
 import uploadRoutes from "./routes/upload.routes";
 
@@ -25,6 +27,8 @@ app.use("/api/auth/email-verification", emailVerificationRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/listings", listingRoutes);
+app.use("/api/providers", publicProviderRoutes);
+app.use("/api/provider", providerRoutes);
 app.use("/api/tenant", tenantRoutes);
 app.use("/api/uploads", uploadRoutes);
 

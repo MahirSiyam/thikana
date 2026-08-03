@@ -222,11 +222,6 @@ function SignedInAuthMenu({
                 {status}
               </span>
             </div>
-            {profile.phone ? (
-              <p className="mt-2 font-inter text-xs text-brand-dark/55">
-                {profile.phone}
-              </p>
-            ) : null}
           </div>
 
           <div className="flex flex-col p-2">

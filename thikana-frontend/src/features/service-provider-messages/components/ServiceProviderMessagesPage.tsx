@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { serviceProviderUser } from "@/features/service-provider/data/service-provider.mock";
 import {
   messageConversations as initialConversations,
   messagesDateRangeLabel,
@@ -11,6 +10,7 @@ import type {
   ChatMessage,
   MessageConversation,
 } from "@/features/service-provider-messages/types/service-provider-messages.types";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 function MoreVerticalIcon() {
   return (
@@ -232,6 +232,7 @@ function ChatPanel({
 }
 
 export function ServiceProviderMessagesPage() {
+  const { profile } = useAuth();
   const [conversations, setConversations] = useState(initialConversations);
   const [selectedId, setSelectedId] = useState(initialConversations[0]?.id ?? "");
   const [chatQuery, setChatQuery] = useState("");
@@ -359,15 +360,23 @@ export function ServiceProviderMessagesPage() {
                   className="size-5"
                 />
               </button>
-              <div className="relative size-9 overflow-hidden rounded-full">
-                <Image
-                  src={serviceProviderUser.topbarAvatarSrc}
-                  alt=""
-                  fill
-                  className="object-cover"
-                  sizes="36px"
-                />
-              </div>
+              {profile?.avatarUrl ? (
+                <div className="relative size-9 overflow-hidden rounded-full">
+                  <Image
+                    src={profile.avatarUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="36px"
+                  />
+                </div>
+              ) : (
+                <div className="flex size-9 items-center justify-center rounded-full bg-brand-dark font-inter text-sm font-bold text-white">
+                  {(profile?.fullName || profile?.email || "P")
+                    .slice(0, 1)
+                    .toUpperCase()}
+                </div>
+              )}
             </div>
           </div>
         </header>
