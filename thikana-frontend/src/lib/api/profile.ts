@@ -33,6 +33,9 @@ export type FullProfile = MeUser & {
     serviceAreas?: string[];
     bio?: string | null;
     tradeCertificateUrl?: string | null;
+    pricingItems?: { id: string; name: string; priceBdt: number }[];
+    availabilityDays?: string[];
+    workingHours?: { start: string; end: string };
   } | null;
   role: AppRole | null;
   approvalStatus: ApprovalStatus | null;
@@ -60,6 +63,13 @@ export type UpdateProfilePayload = {
     uploadedAt?: string;
     secureUrl?: string;
   } | null;
+  serviceCategory?: "electrician" | "plumber" | "cleaner" | "house-mover";
+  yearsOfExperience?: string;
+  serviceAreas?: string[];
+  bio?: string;
+  pricingItems?: { name: string; priceBdt: number }[];
+  availabilityDays?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[];
+  workingHours?: { start: string; end: string };
 };
 
 export const getFullProfile = async () => {

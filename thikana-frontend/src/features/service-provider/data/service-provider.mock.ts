@@ -1,8 +1,5 @@
 import { routes } from "@/config/routes";
-import type {
-  ServiceProviderNavItem,
-  ServiceProviderUser,
-} from "@/features/service-provider/types/service-provider.types";
+import type { ServiceProviderNavItem } from "@/features/service-provider/types/service-provider.types";
 
 export const serviceProviderNavItems: ServiceProviderNavItem[] = [
   {
@@ -54,12 +51,3 @@ export const serviceProviderNavItems: ServiceProviderNavItem[] = [
     href: routes.serviceProviderServiceProfile,
   },
 ];
-
-export const serviceProviderUser: ServiceProviderUser = {
-  name: "Rahim Mia",
-  firstName: "Rahim",
-  roleBadge: "Electrician",
-  verifiedLabel: "Verified ✓",
-  avatarSrc: "/images/service-provider/avatar-rahim.png",
-  topbarAvatarSrc: "/images/service-provider/avatar-rahim.png",
-};

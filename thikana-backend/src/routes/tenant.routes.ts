@@ -11,6 +11,12 @@ import {
   deleteSavedHome,
   listMySavedHomes,
 } from "../controllers/saved-home.controller";
+import {
+  cancelMyServiceRequest,
+  createMyServiceRequest,
+  listMyServiceRequests,
+  reviewMyServiceRequest,
+} from "../controllers/service-request.controller";
 import { getTenantOverview } from "../controllers/tenant-overview.controller";
 import { loadUser } from "../middleware/load-user";
 import {
@@ -34,6 +40,19 @@ router.get("/bookings", ...tenantChain, listMyBookings);
 router.get("/bookings/usage", ...tenantChain, getMyBookingUsage);
 router.post("/bookings", ...tenantChain, createBooking);
 router.post("/bookings/:bookingId/cancel", ...tenantChain, cancelMyBooking);
+
+router.get("/service-requests", ...tenantChain, listMyServiceRequests);
+router.post("/service-requests", ...tenantChain, createMyServiceRequest);
+router.post(
+  "/service-requests/:requestId/cancel",
+  ...tenantChain,
+  cancelMyServiceRequest
+);
+router.post(
+  "/service-requests/:requestId/review",
+  ...tenantChain,
+  reviewMyServiceRequest
+);
 
 router.get("/saved-homes", ...tenantChain, listMySavedHomes);
 router.post("/saved-homes", ...tenantChain, addSavedHome);
