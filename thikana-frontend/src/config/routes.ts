@@ -40,6 +40,8 @@ export const routes = {
   tenantSavedHomes: "/tenant/saved-homes",
   tenantServiceRequests: "/tenant/service-requests",
   tenantMessages: "/tenant/messages",
+  tenantMessagesWith: (peerId: string) =>
+    `/tenant/messages?peer=${encodeURIComponent(peerId)}`,
   tenantProfile: "/tenant/profile",
   ownerOverview: "/owner/overview",
   ownerMyListings: "/owner/my-listings",
@@ -47,6 +49,8 @@ export const routes = {
   ownerBookingRequests: "/owner/booking-requests",
   ownerEarnings: "/owner/earnings",
   ownerMessages: "/owner/messages",
+  ownerMessagesWith: (peerId: string) =>
+    `/owner/messages?peer=${encodeURIComponent(peerId)}`,
   ownerProfile: "/owner/profile",
   serviceProviderOverview: "/service-provider/overview",
   serviceProviderJobRequests: "/service-provider/job-requests",
@@ -54,5 +58,7 @@ export const routes = {
   serviceProviderServiceProfile: "/service-provider/service-profile",
   serviceProviderEarnings: "/service-provider/earnings",
   serviceProviderMessages: "/service-provider/messages",
+  serviceProviderMessagesWith: (peerId: string) =>
+    `/service-provider/messages?peer=${encodeURIComponent(peerId)}`,
   serviceProviderReviews: "/service-provider/reviews",
 } as const;

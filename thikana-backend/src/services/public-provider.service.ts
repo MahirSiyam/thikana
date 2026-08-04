@@ -3,6 +3,7 @@ import { ServiceProviderProfile } from "../models/service-provider-profile.model
 import { User } from "../models/user.model";
 import type { PublicProviderListQuery } from "../validation/service-request.validation";
 import { ServiceRequestError, toObjectId } from "./service-request.service";
+import { resolveAvatarUrl } from "./user.service";
 
 type ProviderProfileLean = {
   userId: unknown;
@@ -44,7 +45,18 @@ const toPublicProviderDto = (
     _id: unknown;
     fullName?: string | null;
     email?: string | null;
-    profileImage?: { secureUrl?: string | null } | null;
+    profileImage?: {
+      publicId?: string;
+      resourceType?: "image" | "raw";
+      secureUrl?: string | null;
+    } | null;
+    identityDocuments?: {
+      selfie?: {
+        publicId?: string;
+        resourceType?: "image" | "raw";
+        secureUrl?: string | null;
+      } | null;
+    } | null;
     address?: {
       area?: string | null;
       district?: string | null;
@@ -56,7 +68,7 @@ const toPublicProviderDto = (
 ) => ({
   id: String(user._id),
   name: user.fullName || user.email || "Provider",
-  avatarUrl: user.profileImage?.secureUrl || null,
+  avatarUrl: resolveAvatarUrl(user),
   serviceCategory: profile?.serviceCategory || null,
   yearsOfExperience: profile?.yearsOfExperience || null,
   serviceAreas: profile?.serviceAreas || [],
@@ -109,7 +121,7 @@ export const listPublicProviders = async (query: PublicProviderListQuery) => {
   const skip = (query.page - 1) * query.limit;
   const [users, total] = await Promise.all([
     User.find(userFilter)
-      .select("fullName email profileImage address")
+      .select("fullName email profileImage identityDocuments.selfie address")
       .sort({ fullName: 1 })
       .skip(skip)
       .limit(query.limit)
@@ -143,7 +155,7 @@ export const getPublicProvider = async (providerId: string) => {
     approvalStatus: "approved",
     accountStatus: "active",
   })
-    .select("fullName email profileImage address")
+    .select("fullName email profileImage identityDocuments.selfie address")
     .lean();
 
   if (!user) {

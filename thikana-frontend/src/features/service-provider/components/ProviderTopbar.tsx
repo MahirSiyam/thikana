@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useAuth } from "@/lib/auth/AuthProvider";
 
 type ProviderTopbarProps = {
   title: string;
@@ -18,12 +17,6 @@ export function ProviderTopbar({
   searchValue,
   onSearchChange,
 }: ProviderTopbarProps) {
-  const { profile } = useAuth();
-  const avatarUrl = profile?.avatarUrl || null;
-  const initial = (profile?.fullName || profile?.email || "P")
-    .slice(0, 1)
-    .toUpperCase();
-
   return (
     <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <h1 className="font-inter text-lg font-bold text-brand-dark sm:text-xl">
@@ -81,21 +74,6 @@ export function ProviderTopbar({
             className="size-5"
           />
         </button>
-        {avatarUrl ? (
-          <div className="relative size-9 overflow-hidden rounded-full">
-            <Image
-              src={avatarUrl}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="36px"
-            />
-          </div>
-        ) : (
-          <div className="flex size-9 items-center justify-center rounded-full bg-brand-dark font-inter text-sm font-bold text-white">
-            {initial}
-          </div>
-        )}
       </div>
     </header>
   );

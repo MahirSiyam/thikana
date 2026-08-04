@@ -1,22 +1,41 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
+import { createServer } from "http";
 import { connectDatabase } from "./config/db";
 import { verifyMailConnection } from "./config/mailer";
 import adminRoutes from "./routes/admin.routes";
 import authRoutes from "./routes/auth.routes";
 import emailVerificationRoutes from "./routes/email-verification.routes";
 import listingRoutes from "./routes/listing.routes";
+import messageRoutes from "./routes/message.routes";
 import providerRoutes from "./routes/provider.routes";
 import publicProviderRoutes from "./routes/public-provider.routes";
 import tenantRoutes from "./routes/tenant.routes";
 import uploadRoutes from "./routes/upload.routes";
+import { initSocketServer } from "./socket";
 
 const app = express();
 
-const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:3000";
+const allowedOrigins = (
+  process.env.FRONTEND_URL || "http://localhost:3000,http://localhost:3001"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors({ origin: allowedOrigin, credentials: true }));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/health", (_req, res) => {
@@ -30,6 +49,7 @@ app.use("/api/listings", listingRoutes);
 app.use("/api/providers", publicProviderRoutes);
 app.use("/api/provider", providerRoutes);
 app.use("/api/tenant", tenantRoutes);
+app.use("/api/messages", messageRoutes);
 app.use("/api/uploads", uploadRoutes);
 
 app.use((_req, res) => {
@@ -44,7 +64,10 @@ const start = async () => {
   await connectDatabase();
   await verifyMailConnection();
 
-  app.listen(PORT, () => {
+  const httpServer = createServer(app);
+  initSocketServer(httpServer, allowedOrigins);
+
+  httpServer.listen(PORT, () => {
     console.log(`Thikana backend listening on port ${PORT}`);
   });
 };

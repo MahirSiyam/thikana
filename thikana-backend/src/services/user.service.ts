@@ -38,7 +38,7 @@ export const canAccessDashboard = (user: {
 const resolveAssetUrl = (asset?: {
   publicId?: string;
   resourceType?: "image" | "raw";
-  secureUrl?: string;
+  secureUrl?: string | null;
 } | null): string | null => {
   if (!asset?.publicId) return null;
 
@@ -59,17 +59,25 @@ const resolveAssetUrl = (asset?: {
   return asset.secureUrl || null;
 };
 
-const resolveAvatarUrl = (user: UserDocument): string | null => {
-  const profileImage = user.profileImage as
-    | { publicId?: string; resourceType?: "image" | "raw"; secureUrl?: string }
-    | undefined;
-  const fromProfile = resolveAssetUrl(profileImage);
-  if (fromProfile) return fromProfile;
+type AvatarSource = {
+  profileImage?: {
+    publicId?: string;
+    resourceType?: "image" | "raw";
+    secureUrl?: string | null;
+  } | null;
+  identityDocuments?: {
+    selfie?: {
+      publicId?: string;
+      resourceType?: "image" | "raw";
+      secureUrl?: string | null;
+    } | null;
+  } | null;
+};
 
-  const selfie = user.identityDocuments?.selfie as
-    | { publicId?: string; resourceType?: "image" | "raw"; secureUrl?: string }
-    | undefined;
-  return resolveAssetUrl(selfie);
+export const resolveAvatarUrl = (user: AvatarSource): string | null => {
+  const fromProfile = resolveAssetUrl(user.profileImage);
+  if (fromProfile) return fromProfile;
+  return resolveAssetUrl(user.identityDocuments?.selfie);
 };
 
 export const toSafeUser = (user: UserDocument): SafeUser => {

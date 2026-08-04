@@ -172,34 +172,7 @@ function VerificationBanner() {
   const { profile } = useAuth();
   const status = profile?.approvalStatus;
 
-  if (status === "approved") {
-    return (
-      <section
-        aria-label="Verification status"
-        className="flex flex-col gap-4 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
-      >
-        <div className="flex min-w-0 items-start gap-4">
-          <span className="text-2xl leading-none" aria-hidden="true">
-            ✓
-          </span>
-          <div className="flex min-w-0 flex-col gap-1">
-            <h2 className="font-inter text-sm font-bold text-brand-dark">
-              You are verified.
-            </h2>
-            <p className="font-inter text-[13px] text-[#6b7280]">
-              Your profile is live and tenants can send you job requests.
-            </p>
-          </div>
-        </div>
-        <Link
-          href={routes.serviceProviderServiceProfile}
-          className="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-brand-dark px-4 font-inter text-[13px] font-semibold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
-        >
-          View Profile
-        </Link>
-      </section>
-    );
-  }
+  if (status === "approved") return null;
 
   const rejected = status === "rejected";
 

@@ -14,6 +14,7 @@ export type MyBooking = {
   requestedAt: string;
   status: MyBookingStatus;
   imageSrc: string;
+  ownerId: string;
   ownerName: string;
   ownerAvatarSrc: string;
   canCancel?: boolean;
