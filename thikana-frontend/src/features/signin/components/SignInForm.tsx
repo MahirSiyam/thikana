@@ -7,7 +7,7 @@ import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { getMe } from "@/lib/api/auth";
-import { auth } from "@/lib/firebase/firebase";
+import { auth, authPersistenceReady } from "@/lib/firebase/firebase";
 import { resolvePostLoginRoute } from "@/lib/auth/resolve-post-login-route";
 import {
   formDraftKeys,
@@ -42,6 +42,7 @@ export function SignInForm() {
     setError(null);
     setIsSubmitting(true);
     try {
+      await authPersistenceReady;
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
       await credential.user.reload();
       removeSessionJson(formDraftKeys.signInEmail);

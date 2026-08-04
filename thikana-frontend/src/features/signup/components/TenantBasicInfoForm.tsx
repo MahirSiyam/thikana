@@ -18,7 +18,7 @@ import { SignupStepper } from "@/features/signup/components/SignupStepper";
 import { useSignupWizard } from "@/features/signup/context/SignupWizardProvider";
 import { getMe } from "@/lib/api/auth";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { auth } from "@/lib/firebase/firebase";
+import { auth, authPersistenceReady } from "@/lib/firebase/firebase";
 
 const fieldClassName =
   "h-[52px] w-full rounded-[10px] border border-[#e5e5e2] bg-white px-4 font-inter text-[15px] text-brand-dark outline-none placeholder:text-brand-dark/50 focus-visible:ring-2 focus-visible:ring-brand-dark/20";
@@ -172,6 +172,8 @@ export function TenantBasicInfoForm({
         continueAfterBasics();
         return;
       }
+
+      await authPersistenceReady;
 
       let credential;
       try {

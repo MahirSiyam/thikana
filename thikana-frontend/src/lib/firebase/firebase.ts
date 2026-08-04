@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { browserSessionPersistence, getAuth, setPersistence } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -23,3 +23,5 @@ const adminApp = getApps().some((item) => item.name === ADMIN_APP_NAME)
   : initializeApp(firebaseConfig, ADMIN_APP_NAME);
 
 export const adminAuth = getAuth(adminApp);
+
+export const authPersistenceReady = setPersistence(auth, browserSessionPersistence);
