@@ -32,6 +32,7 @@ export function ServiceProviderSidebar({
   const { profile } = useAuth();
   const { signingOut, signOutUser } = useDashboardSignOut({ scope: "user" });
   const displayName = profile?.fullName || profile?.email || "Provider";
+  const avatarUrl = profile?.avatarUrl || null;
 
   return (
     <>
@@ -103,9 +104,21 @@ export function ServiceProviderSidebar({
 
         <div className="mt-auto flex flex-col gap-3 border-t border-[#e5e5e2] pt-4">
           <div className="flex items-center gap-2">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/10 font-inter text-sm font-bold text-white">
-              {displayName.slice(0, 1).toUpperCase()}
-            </div>
+            {avatarUrl ? (
+              <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
+                <Image
+                  src={avatarUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                />
+              </div>
+            ) : (
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white/10 font-inter text-sm font-bold text-white">
+                {displayName.slice(0, 1).toUpperCase()}
+              </div>
+            )}
             <div className="flex min-w-0 flex-col gap-1">
               <p className="truncate font-inter text-[15px] font-bold text-white">
                 {displayName}

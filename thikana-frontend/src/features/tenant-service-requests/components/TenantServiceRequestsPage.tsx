@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
+import { routes } from "@/config/routes";
 import type { ServiceRequestsTabId } from "@/features/tenant-service-requests/types/tenant-service-requests.types";
 import {
   listPublicProviders,
@@ -379,15 +381,30 @@ function ServiceRequestCard({
         ) : null}
 
         {request.status === "pending" || request.status === "accepted" ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onCancel}
-            className="inline-flex w-full items-center justify-center rounded-md border border-[#dc2626] px-4 py-2 font-inter text-xs font-bold text-[#dc2626] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626] focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto"
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <Link
+              href={routes.tenantMessagesWith(request.providerId)}
+              className="inline-flex w-full items-center justify-center rounded-md border border-brand-dark px-4 py-2 font-inter text-xs font-bold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 sm:w-auto"
+            >
+              Message
+            </Link>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onCancel}
+              className="inline-flex w-full items-center justify-center rounded-md border border-[#dc2626] px-4 py-2 font-inter text-xs font-bold text-[#dc2626] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dc2626] focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <Link
+            href={routes.tenantMessagesWith(request.providerId)}
+            className="inline-flex w-full items-center justify-center rounded-md border border-brand-dark px-4 py-2 font-inter text-xs font-bold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 sm:w-auto"
           >
-            Cancel
-          </button>
-        ) : null}
+            Message
+          </Link>
+        )}
       </div>
     </article>
   );

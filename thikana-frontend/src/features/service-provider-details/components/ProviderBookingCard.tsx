@@ -1,12 +1,20 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import { routes } from "@/config/routes";
 import {
   formDraftKeys,
   usePersistedState,
 } from "@/hooks/use-persisted-state";
+import type { ServiceCategory } from "@/lib/api/provider";
+import { createServiceRequest } from "@/lib/api/tenant";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 type ProviderBookingCardProps = {
+  providerId: string;
+  serviceCategory?: ServiceCategory | null;
   timeSlots: string[];
   defaultTimeSlot: string;
   storageKeySuffix?: string;
@@ -19,11 +27,30 @@ type BookingDraft = {
   notes: string;
 };
 
+const combineDateAndTime = (date: string, timeLabel: string) => {
+  const match = timeLabel.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return new Date(`${date}T09:00:00`).toISOString();
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3].toUpperCase();
+  if (meridiem === "PM" && hours < 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+  const isoLocal = `${date}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+  return new Date(isoLocal).toISOString();
+};
+
 export function ProviderBookingCard({
+  providerId,
+  serviceCategory,
   timeSlots,
   defaultTimeSlot,
   storageKeySuffix = "default",
 }: ProviderBookingCardProps) {
+  const { profile, loading: authLoading } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const [draft, setDraft, { clear }] = usePersistedState(
     `${formDraftKeys.providerBooking}:${storageKeySuffix}`,
     (): BookingDraft => ({
@@ -46,17 +73,63 @@ export function ProviderBookingCard({
             timeSlots.includes(raw.selectedTime)
               ? raw.selectedTime
               : fallback.selectedTime,
-          address: typeof raw.address === "string" ? raw.address : fallback.address,
+          address:
+            typeof raw.address === "string" ? raw.address : fallback.address,
           notes: typeof raw.notes === "string" ? raw.notes : fallback.notes,
         };
       },
     }
   );
 
+  const submit = async () => {
+    setMessage(null);
+    setError(null);
+
+    if (!profile) {
+      setError("Sign in as a tenant to send a booking request.");
+      return;
+    }
+    if (profile.role !== "tenant") {
+      setError("Only tenant accounts can request services from this page.");
+      return;
+    }
+    if (!draft.preferredDate) {
+      setError("Choose a preferred date.");
+      return;
+    }
+    if (!draft.address.trim()) {
+      setError("Enter the service address.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await createServiceRequest({
+        providerId,
+        serviceCategory: serviceCategory || undefined,
+        address: draft.address.trim(),
+        scheduledAt: combineDateAndTime(draft.preferredDate, draft.selectedTime),
+        description: draft.notes.trim() || undefined,
+      });
+      clear();
+      setMessage("Request sent. Track it from your tenant Service Requests page.");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not send your booking request"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <aside className="w-full min-w-0 rounded-2xl bg-white p-6 shadow-[0_8px_24px_rgba(10,10,10,0.1)] lg:sticky lg:top-28 lg:w-[min(100%,400px)] lg:shrink-0 lg:p-7">
       <div className="space-y-1.5">
-        <h2 className="font-jakarta text-xl font-bold text-brand-dark">Book This Provider</h2>
+        <h2 className="font-jakarta text-xl font-bold text-brand-dark">
+          Book This Provider
+        </h2>
         <div className="flex items-center gap-1.5">
           <Image
             src="/images/service-provider-details/icon-clock.svg"
@@ -65,7 +138,9 @@ export function ProviderBookingCard({
             height={14}
             aria-hidden="true"
           />
-          <p className="font-inter text-[13px] text-brand-dark">Usually confirms within 2 hrs</p>
+          <p className="font-inter text-[13px] text-brand-dark">
+            Usually confirms within 2 hrs
+          </p>
         </div>
       </div>
 
@@ -75,11 +150,14 @@ export function ProviderBookingCard({
         className="flex flex-col gap-5"
         onSubmit={(event) => {
           event.preventDefault();
-          clear();
+          void submit();
         }}
       >
         <div className="flex flex-col gap-2">
-          <label htmlFor="preferred-date" className="font-inter text-[11px] font-bold uppercase text-brand-dark">
+          <label
+            htmlFor="preferred-date"
+            className="font-inter text-[11px] font-bold uppercase text-brand-dark"
+          >
             Preferred Date
           </label>
           <div className="flex h-11 w-full items-center justify-between rounded-lg border border-brand-dark/50 px-3">
@@ -107,7 +185,9 @@ export function ProviderBookingCard({
         </div>
 
         <div className="flex flex-col gap-2">
-          <p className="font-inter text-[11px] font-bold uppercase text-brand-dark">Preferred Time</p>
+          <p className="font-inter text-[11px] font-bold uppercase text-brand-dark">
+            Preferred Time
+          </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
             {timeSlots.map((slot) => {
               const isActive = slot === draft.selectedTime;
@@ -132,7 +212,10 @@ export function ProviderBookingCard({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="service-address" className="font-inter text-[11px] font-bold uppercase text-brand-dark">
+          <label
+            htmlFor="service-address"
+            className="font-inter text-[11px] font-bold uppercase text-brand-dark"
+          >
             Service Address
           </label>
           <div className="flex min-h-16 w-full items-start gap-2 rounded-lg border border-brand-dark/50 p-3">
@@ -153,7 +236,7 @@ export function ProviderBookingCard({
                   address: event.target.value,
                 }))
               }
-              placeholder="Enter your full address in Dhaka"
+              placeholder="Enter your full address"
               rows={2}
               className="min-w-0 flex-1 resize-none bg-transparent font-inter text-sm text-brand-dark outline-none placeholder:text-brand-dark/60"
             />
@@ -161,7 +244,10 @@ export function ProviderBookingCard({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="additional-notes" className="font-inter text-[11px] font-bold uppercase text-brand-dark">
+          <label
+            htmlFor="additional-notes"
+            className="font-inter text-[11px] font-bold uppercase text-brand-dark"
+          >
             Additional Notes
           </label>
           <textarea
@@ -176,15 +262,47 @@ export function ProviderBookingCard({
           />
         </div>
 
+        {error ? (
+          <p className="rounded-lg border border-[#fecaca] bg-[#fef2f2] px-3 py-2 font-inter text-[13px] text-[#b91c1c]">
+            {error}{" "}
+            {!profile && !authLoading ? (
+              <Link href={routes.signIn} className="font-semibold underline">
+                Sign in
+              </Link>
+            ) : null}
+          </p>
+        ) : null}
+        {message ? (
+          <p className="rounded-lg border border-[#bbf7d0] bg-[#f0fdf4] px-3 py-2 font-inter text-[13px] text-[#15803d]">
+            {message}{" "}
+            <Link
+              href={routes.tenantServiceRequests}
+              className="font-semibold underline"
+            >
+              View requests
+            </Link>
+          </p>
+        ) : null}
+
         <button
           type="submit"
-          className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-brand-dark px-6 font-jakarta text-base font-bold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          disabled={submitting || authLoading}
+          className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-brand-dark px-6 font-jakarta text-base font-bold text-white transition-colors hover:bg-brand-dark/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 disabled:opacity-60"
         >
-          Confirm Booking Request
+          {submitting ? "Sending…" : "Confirm Booking Request"}
         </button>
 
+        {profile?.role === "tenant" ? (
+          <Link
+            href={routes.tenantMessagesWith(providerId)}
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-brand-dark px-6 font-jakarta text-sm font-bold text-brand-dark transition-colors hover:bg-brand-dark/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          >
+            Message provider
+          </Link>
+        ) : null}
+
         <p className="text-center font-inter text-xs text-brand-dark">
-          🔒 No payment now · Free cancellation up to 12 hrs before
+          🔒 No payment now · Cancel anytime before the provider accepts
         </p>
       </form>
     </aside>

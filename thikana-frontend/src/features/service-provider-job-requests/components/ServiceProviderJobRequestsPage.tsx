@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { routes } from "@/config/routes";
 import { ProviderTopbar } from "@/features/service-provider/components/ProviderTopbar";
 import {
   errorMessage,
@@ -203,6 +205,12 @@ function JobRequestCard({
 
       {isPending || isAccepted ? (
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <Link
+            href={routes.serviceProviderMessagesWith(request.tenantId)}
+            className="inline-flex h-9 items-center justify-center rounded-md border border-[#e5e5e2] px-4 font-inter text-[13px] font-semibold text-brand-dark transition-colors hover:bg-[#f5f5f3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 sm:px-5"
+          >
+            Message
+          </Link>
           {isPending ? (
             <>
               <button
@@ -233,7 +241,16 @@ function JobRequestCard({
             </button>
           )}
         </div>
-      ) : null}
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <Link
+            href={routes.serviceProviderMessagesWith(request.tenantId)}
+            className="inline-flex h-9 items-center justify-center rounded-md border border-[#e5e5e2] px-4 font-inter text-[13px] font-semibold text-brand-dark transition-colors hover:bg-[#f5f5f3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2 sm:px-5"
+          >
+            Message
+          </Link>
+        </div>
+      )}
     </article>
   );
 }

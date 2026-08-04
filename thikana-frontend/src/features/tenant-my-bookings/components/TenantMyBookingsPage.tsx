@@ -79,6 +79,7 @@ function bookingToCard(booking: BookingDto): MyBooking {
     requestedAt: formatRequestedAt(booking.createdAt),
     status: mapStatus(booking.status),
     imageSrc: booking.listingImageUrl || FALLBACK_IMAGE,
+    ownerId: booking.ownerId,
     ownerName: booking.ownerName || "Owner",
     ownerAvatarSrc: booking.ownerAvatarUrl || FALLBACK_AVATAR,
     canCancel: booking.status === "pending",
@@ -145,6 +146,12 @@ function BookingCard({
         </div>
 
         <div className="flex w-full items-center justify-end gap-4 sm:w-auto">
+          <Link
+            href={routes.tenantMessagesWith(booking.ownerId)}
+            className="font-inter text-xs font-semibold text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
+          >
+            Message
+          </Link>
           {booking.canCancel ? (
             <button
               type="button"
