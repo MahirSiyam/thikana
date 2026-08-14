@@ -22,6 +22,8 @@ type ServicesListingsSectionProps = {
   activeCategory: ServicesCategoryFilter;
   onCategoryChange: (category: ServicesCategoryFilter) => void;
   searchQuery: string;
+  initialArea?: string;
+  initialBudget?: string;
 };
 
 const SORT_OPTIONS: { id: ServicesSortId; label: string }[] = [
@@ -34,6 +36,8 @@ export function ServicesListingsSection({
   activeCategory,
   onCategoryChange,
   searchQuery,
+  initialArea = "",
+  initialBudget = "",
 }: ServicesListingsSectionProps) {
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<ServicesSortId>("top-rated");
@@ -45,6 +49,31 @@ export function ServicesListingsSection({
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialArea || initialBudget) {
+      let minPrice = 0;
+      let maxPrice = 50000;
+      if (initialBudget === "under-1k") {
+        maxPrice = 1000;
+      } else if (initialBudget === "1k-5k") {
+        minPrice = 1000;
+        maxPrice = 5000;
+      } else if (initialBudget === "5k-plus") {
+        minPrice = 5000;
+        maxPrice = 50000;
+      }
+
+      const next = {
+        ...defaultServicesFilters,
+        area: initialArea || "",
+        budgetMin: minPrice,
+        budgetMax: maxPrice,
+      };
+      setDraftFilters(next);
+      setAppliedFilters(next);
+    }
+  }, [initialArea, initialBudget]);
 
   useEffect(() => {
     setPage(1);

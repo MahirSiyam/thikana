@@ -28,6 +28,8 @@ export type SupportTicket = {
   priority: SupportTicketPriority;
   subject: string;
   tab: SupportInboxTabId;
+  fileName?: string | null;
+  attachmentUrl?: string | null;
   messages: SupportMessage[];
   context: {
     userPlan: string;
