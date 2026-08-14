@@ -371,6 +371,75 @@ export const sendListingRejectedEmail = async (input: {
   });
 };
 
+export const sendSupportTicketStatusEmail = async (input: {
+  email: string;
+  name: string;
+  ticketNumber: string;
+  subject: string;
+  status: "open" | "in_progress" | "resolved";
+  adminReply?: string;
+}): Promise<void> => {
+  const statusText =
+    input.status === "in_progress"
+      ? "In Progress"
+      : input.status === "resolved"
+      ? "Resolved"
+      : "Open";
+
+  const statusDescription =
+    input.status === "in_progress"
+      ? "Our support team is now actively reviewing and working on your issue."
+      : input.status === "resolved"
+      ? "Your support ticket has been marked as resolved by our support team."
+      : "Your support ticket status has been updated to open.";
+
+  const statusBadgeBg =
+    input.status === "in_progress"
+      ? "#2563eb"
+      : input.status === "resolved"
+      ? "#16a34a"
+      : "#d97706";
+
+  const replySection = input.adminReply
+    ? `
+      <div style="margin:20px 0;padding:16px;background:#f8fafc;border-left:4px solid #111827;border-radius:6px;">
+        <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;">Admin Response:</p>
+        <p style="margin:0;font-size:14px;color:#0f172a;line-height:1.5;">${input.adminReply}</p>
+      </div>
+    `
+    : "";
+
+  await mailTransporter.sendMail({
+    from: process.env.EMAIL_FROM || "Thikana Support <support@thikana.com>",
+    to: input.email,
+    subject: `[${input.ticketNumber}] Support Ticket Status: ${statusText}`,
+    text: [
+      `Hello ${input.name},`,
+      "",
+      `Your support ticket #${input.ticketNumber} ("${input.subject}") status has been updated to "${statusText}".`,
+      "",
+      statusDescription,
+      input.adminReply ? `\nAdmin Response:\n${input.adminReply}` : "",
+      "",
+      "— Thikana Support Team",
+    ].join("\n"),
+    html: wrapHtml(
+      `Support Ticket Updated: ${statusText}`,
+      `
+        <p>Hello <strong>${input.name}</strong>,</p>
+        <p>Your support ticket <strong>#${input.ticketNumber}</strong> (<em>${input.subject}</em>) has been updated.</p>
+        <div style="display:inline-block;padding:8px 16px;margin:12px 0;background:${statusBadgeBg};color:#ffffff;border-radius:20px;font-size:13px;font-weight:700;">
+          Status: ${statusText}
+        </div>
+        <p>${statusDescription}</p>
+        ${replySection}
+        <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+        <p style="font-size:13px;color:#64748b;">Thank you for reaching out to Thikana Support.</p>
+      `
+    ),
+  });
+};
+
 /** Fire-and-forget email helper that never throws to the caller. */
 export const safeSendEmail = async (
   label: string,

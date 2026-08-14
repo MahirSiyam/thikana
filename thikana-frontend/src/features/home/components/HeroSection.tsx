@@ -54,7 +54,7 @@ function SocialLink({
 
 export function HeroSection() {
   return (
-    <section className="overflow-x-hidden bg-surface pb-8 pt-5 sm:pb-12 sm:pt-7 lg:pb-16 lg:pt-10">
+    <section className="relative z-20 bg-surface pb-8 pt-5 sm:pb-12 sm:pt-7 lg:pb-16 lg:pt-10">
       <Container className="min-w-0 px-3! sm:px-4! lg:px-3! xl:px-5! 2xl:px-6!">
         <div className="@container relative mx-auto w-full min-w-0 max-w-350">
           <header className="relative z-30">

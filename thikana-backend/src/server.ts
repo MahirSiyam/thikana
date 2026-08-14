@@ -11,6 +11,7 @@ import listingRoutes from "./routes/listing.routes";
 import messageRoutes from "./routes/message.routes";
 import providerRoutes from "./routes/provider.routes";
 import publicProviderRoutes from "./routes/public-provider.routes";
+import supportRoutes from "./routes/support.routes";
 import tenantRoutes from "./routes/tenant.routes";
 import uploadRoutes from "./routes/upload.routes";
 import { initSocketServer } from "./socket";
@@ -51,6 +52,7 @@ app.use("/api/provider", providerRoutes);
 app.use("/api/tenant", tenantRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/support", supportRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
