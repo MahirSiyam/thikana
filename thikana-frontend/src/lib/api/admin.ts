@@ -7,6 +7,7 @@ import type {
   MeUser,
 } from "@/lib/api/auth";
 import type { AdminOverviewData } from "@/features/admin-overview/types/admin-overview.types";
+import type { AdminReportsAnalyticsData } from "@/features/admin-reports-analytics/types/admin-reports-analytics.types";
 
 export type AdminUserListParams = {
   page?: number;
@@ -176,5 +177,16 @@ export const getAdminOverview = async (): Promise<AdminOverviewData> => {
   }
   return response.data;
 };
+
+export const getAdminReportsAnalytics =
+  async (): Promise<AdminReportsAnalyticsData> => {
+    const response = await adminAuthorizedFetch<AdminReportsAnalyticsData>(
+      "/api/admin/reports-analytics"
+    );
+    if (!response.data) {
+      throw new Error("Admin reports analytics response missing data payload");
+    }
+    return response.data;
+  };
 
 export type { ApiResponse };

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { getOverview } from "../controllers/admin-overview.controller";
+import { getReportsAnalytics } from "../controllers/admin-reports-analytics.controller";
 import {
   approveListingByAdmin,
   getListingForAdmin,
@@ -36,6 +37,7 @@ const approvalRateLimiter = rateLimit({
 const adminChain = [verifyFirebaseToken, loadUser, requireAdmin] as const;
 
 router.get("/overview", ...adminChain, getOverview);
+router.get("/reports-analytics", ...adminChain, getReportsAnalytics);
 
 router.get("/users", ...adminChain, listUsers);
 router.get("/users/:userId", ...adminChain, getUser);
