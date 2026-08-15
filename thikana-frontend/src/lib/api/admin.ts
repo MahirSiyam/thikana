@@ -6,6 +6,7 @@ import type {
   CloudinaryAsset,
   MeUser,
 } from "@/lib/api/auth";
+import type { AdminOverviewData } from "@/features/admin-overview/types/admin-overview.types";
 
 export type AdminUserListParams = {
   page?: number;
@@ -164,6 +165,16 @@ export const reactivateAdminUser = async (userId: string, note?: string) => {
     }
   );
   return response.data as MeUser;
+};
+
+export const getAdminOverview = async (): Promise<AdminOverviewData> => {
+  const response = await adminAuthorizedFetch<AdminOverviewData>(
+    "/api/admin/overview"
+  );
+  if (!response.data) {
+    throw new Error("Admin overview response missing data payload");
+  }
+  return response.data;
 };
 
 export type { ApiResponse };

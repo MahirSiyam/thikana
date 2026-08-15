@@ -1,7 +1,7 @@
-import type { AdminQueueItem } from "@/features/admin-overview/types/admin-overview.types";
+import type { AdminQueueItemLive } from "@/features/admin-overview/types/admin-overview.types";
 
 const typeStyles: Record<
-  AdminQueueItem["type"],
+  AdminQueueItemLive["type"],
   { className: string }
 > = {
   Listing: { className: "bg-[#0f0f0f] text-white" },
@@ -9,11 +9,23 @@ const typeStyles: Record<
   User: { className: "bg-[#f1f5f9] text-[#475569]" },
 };
 
+function formatRelativeTime(iso: string, now: Date = new Date()): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const diffMinutes = Math.round((now.getTime() - then) / 60_000);
+  if (diffMinutes < 1) return "now";
+  if (diffMinutes < 60) return `${diffMinutes}m`;
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays}d`;
+}
+
 export function AdminVerificationQueue({
   items,
   count,
 }: {
-  items: AdminQueueItem[];
+  items: AdminQueueItemLive[];
   count: number;
 }) {
   return (
@@ -42,7 +54,9 @@ export function AdminVerificationQueue({
             <p className="min-w-0 flex-1 truncate font-inter text-[13px] font-medium text-black">
               {item.title}
             </p>
-            <time className="shrink-0 font-inter text-[11px] text-[#94a3b8]">{item.time}</time>
+            <time className="shrink-0 font-inter text-[11px] text-[#94a3b8]">
+              {formatRelativeTime(item.submittedAt)}
+            </time>
             <button
               type="button"
               className="shrink-0 rounded bg-black px-2.5 py-1.5 font-inter text-[11px] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark focus-visible:ring-offset-2"
@@ -51,6 +65,11 @@ export function AdminVerificationQueue({
             </button>
           </li>
         ))}
+        {items.length === 0 ? (
+          <li className="py-6 text-center font-inter text-xs text-[#94a3b8]">
+            Queue is empty. Nice work.
+          </li>
+        ) : null}
       </ul>
 
       <button
