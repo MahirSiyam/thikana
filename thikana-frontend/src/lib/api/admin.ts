@@ -8,6 +8,10 @@ import type {
 } from "@/lib/api/auth";
 import type { AdminOverviewData } from "@/features/admin-overview/types/admin-overview.types";
 import type { AdminReportsAnalyticsData } from "@/features/admin-reports-analytics/types/admin-reports-analytics.types";
+import type {
+  AdminSiteSettingsData,
+  AdminSiteSettingsUpdateInput,
+} from "@/features/admin-site-settings/types/admin-site-settings.types";
 
 export type AdminUserListParams = {
   page?: number;
@@ -188,5 +192,31 @@ export const getAdminReportsAnalytics =
     }
     return response.data;
   };
+
+export const getAdminSiteSettings = async (): Promise<AdminSiteSettingsData> => {
+  const response = await adminAuthorizedFetch<AdminSiteSettingsData>(
+    "/api/admin/site-settings"
+  );
+  if (!response.data) {
+    throw new Error("Admin site settings response missing data payload");
+  }
+  return response.data;
+};
+
+export const updateAdminSiteSettings = async (
+  input: AdminSiteSettingsUpdateInput
+): Promise<AdminSiteSettingsData> => {
+  const response = await adminAuthorizedFetch<AdminSiteSettingsData>(
+    "/api/admin/site-settings",
+    {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }
+  );
+  if (!response.data) {
+    throw new Error("Admin site settings update missing data payload");
+  }
+  return response.data;
+};
 
 export type { ApiResponse };
