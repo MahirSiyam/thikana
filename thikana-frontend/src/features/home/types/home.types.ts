@@ -35,13 +35,4 @@ export type TrustFeature = {
   iconSrc: string;
 };
 
-export type Testimonial = {
-  id: string;
-  name: string;
-  role: string;
-  quote: string;
-  rating: number;
-  avatarSrc: string;
-};
-
 export type SearchTab = "home" | "service";
