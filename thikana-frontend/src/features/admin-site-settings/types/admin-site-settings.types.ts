@@ -24,3 +24,22 @@ export type SiteVerificationSettings = {
 export type SiteCommissionSettings = {
   platformFeePercent: string;
 };
+
+export type AdminSiteSettingsData = {
+  general: SiteGeneralSettings;
+  verification: SiteVerificationSettings;
+  commission: SiteCommissionSettings;
+  notifications: NotificationEventSetting[];
+  updatedAt: string | null;
+};
+
+export type AdminSiteSettingsUpdateInput = {
+  general?: Partial<SiteGeneralSettings>;
+  verification?: Partial<SiteVerificationSettings>;
+  commission?: Partial<SiteCommissionSettings>;
+  notifications?: {
+    id: string;
+    channel: NotificationChannel;
+    value: boolean;
+  }[];
+};

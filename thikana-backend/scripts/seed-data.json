@@ -1,0 +1,600 @@
+{
+  "users": [
+    {
+      "_id": { "$oid": "674a00000000000000000001" },
+      "firebaseUid": "firebase_admin_uid_001",
+      "fullName": "Thikana Admin",
+      "email": "admin@thikana.app",
+      "phone": "01700000001",
+      "role": "admin",
+      "emailVerified": true,
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Gulshan"
+      },
+      "approvedAt": { "$date": "2025-01-15T06:00:00.000Z" },
+      "lastLoginAt": { "$date": "2026-08-14T10:30:00.000Z" },
+      "createdAt": { "$date": "2025-01-15T06:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-14T10:30:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674a00000000000000000002" },
+      "firebaseUid": "firebase_tenant_uid_001",
+      "fullName": "Rahim Uddin",
+      "email": "rahim.tenant@gmail.com",
+      "phone": "01711223344",
+      "role": "tenant",
+      "emailVerified": true,
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Mirpur"
+      },
+      "profileImage": {
+        "publicId": "thikana/profiles/rahim_profile",
+        "resourceType": "image",
+        "format": "jpg",
+        "bytes": 84500,
+        "secureUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/profiles/rahim_profile.jpg",
+        "uploadedAt": { "$date": "2025-06-01T08:00:00.000Z" }
+      },
+      "approvedAt": { "$date": "2025-06-02T09:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "lastLoginAt": { "$date": "2026-08-13T14:20:00.000Z" },
+      "createdAt": { "$date": "2025-06-01T07:30:00.000Z" },
+      "updatedAt": { "$date": "2026-08-13T14:20:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674a00000000000000000003" },
+      "firebaseUid": "firebase_tenant_uid_002",
+      "fullName": "Nusrat Jahan",
+      "email": "nusrat.student@outlook.com",
+      "phone": "01822334455",
+      "role": "tenant",
+      "emailVerified": true,
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Dhanmondi"
+      },
+      "approvedAt": { "$date": "2025-07-10T11:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "lastLoginAt": { "$date": "2026-08-12T09:15:00.000Z" },
+      "createdAt": { "$date": "2025-07-10T10:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-12T09:15:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674a00000000000000000004" },
+      "firebaseUid": "firebase_owner_uid_001",
+      "fullName": "Abdul Karim",
+      "email": "karim.owner@gmail.com",
+      "phone": "01933445566",
+      "role": "owner",
+      "emailVerified": true,
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Banani"
+      },
+      "identityDocuments": {
+        "nidFront": {
+          "publicId": "thikana/docs/karim_nid_front",
+          "resourceType": "image",
+          "format": "jpg",
+          "secureUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/docs/karim_nid_front.jpg",
+          "uploadedAt": { "$date": "2025-05-01T06:00:00.000Z" }
+        },
+        "nidBack": {
+          "publicId": "thikana/docs/karim_nid_back",
+          "resourceType": "image",
+          "format": "jpg",
+          "secureUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/docs/karim_nid_back.jpg",
+          "uploadedAt": { "$date": "2025-05-01T06:05:00.000Z" }
+        },
+        "selfie": {
+          "publicId": "thikana/docs/karim_selfie",
+          "resourceType": "image",
+          "format": "jpg",
+          "secureUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/docs/karim_selfie.jpg",
+          "uploadedAt": { "$date": "2025-05-01T06:10:00.000Z" }
+        }
+      },
+      "approvedAt": { "$date": "2025-05-03T10:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "lastLoginAt": { "$date": "2026-08-14T08:00:00.000Z" },
+      "createdAt": { "$date": "2025-05-01T05:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-14T08:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674a00000000000000000005" },
+      "firebaseUid": "firebase_owner_uid_002",
+      "fullName": "Fatema Begum",
+      "email": "fatema.owner@yahoo.com",
+      "phone": "01644556677",
+      "role": "owner",
+      "emailVerified": true,
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Uttara"
+      },
+      "approvedAt": { "$date": "2025-08-20T12:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "createdAt": { "$date": "2025-08-18T09:00:00.000Z" },
+      "updatedAt": { "$date": "2025-08-20T12:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674a00000000000000000006" },
+      "firebaseUid": "firebase_provider_uid_001",
+      "fullName": "Mohammad Hasan",
+      "email": "hasan.electrician@gmail.com",
+      "phone": "01555667788",
+      "role": "service_provider",
+      "emailVerified": true,
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Mohammadpur"
+      },
+      "approvedAt": { "$date": "2025-04-10T08:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "lastLoginAt": { "$date": "2026-08-14T07:45:00.000Z" },
+      "createdAt": { "$date": "2025-04-08T10:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-14T07:45:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674a00000000000000000007" },
+      "firebaseUid": "firebase_provider_uid_002",
+      "fullName": "Jamal Hossain",
+      "email": "jamal.plumber@gmail.com",
+      "phone": "01366778899",
+      "role": "service_provider",
+      "emailVerified": true,
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Mirpur"
+      },
+      "approvedAt": { "$date": "2025-04-15T09:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "createdAt": { "$date": "2025-04-12T11:00:00.000Z" },
+      "updatedAt": { "$date": "2025-04-15T09:00:00.000Z" }
+    }
+  ],
+  "tenantprofiles": [
+    {
+      "_id": { "$oid": "674c00000000000000000001" },
+      "userId": { "$oid": "674a00000000000000000002" },
+      "lookingAs": "bachelor",
+      "preferredLocation": "Mirpur, Pallabi, Kazipara",
+      "budgetRange": "8000-12000 BDT",
+      "createdAt": { "$date": "2025-06-02T09:30:00.000Z" },
+      "updatedAt": { "$date": "2025-06-02T09:30:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674c00000000000000000002" },
+      "userId": { "$oid": "674a00000000000000000003" },
+      "lookingAs": "student",
+      "preferredLocation": "Dhanmondi, Lalmatia",
+      "budgetRange": "6000-9000 BDT",
+      "createdAt": { "$date": "2025-07-10T11:30:00.000Z" },
+      "updatedAt": { "$date": "2025-07-10T11:30:00.000Z" }
+    }
+  ],
+  "ownerprofiles": [
+    {
+      "_id": { "$oid": "674d00000000000000000001" },
+      "userId": { "$oid": "674a00000000000000000004" },
+      "propertyCount": "3",
+      "preferredContactMethod": "whatsapp",
+      "ownershipProof": {
+        "publicId": "thikana/docs/karim_ownership_deed",
+        "resourceType": "raw",
+        "format": "pdf",
+        "bytes": 245000,
+        "secureUrl": "https://res.cloudinary.com/thikana/raw/upload/v1/thikana/docs/karim_ownership_deed.pdf",
+        "uploadedAt": { "$date": "2025-05-01T06:15:00.000Z" }
+      },
+      "createdAt": { "$date": "2025-05-01T06:20:00.000Z" },
+      "updatedAt": { "$date": "2025-05-01T06:20:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674d00000000000000000002" },
+      "userId": { "$oid": "674a00000000000000000005" },
+      "propertyCount": "1",
+      "preferredContactMethod": "phone",
+      "createdAt": { "$date": "2025-08-18T09:30:00.000Z" },
+      "updatedAt": { "$date": "2025-08-18T09:30:00.000Z" }
+    }
+  ],
+  "serviceproviderprofiles": [
+    {
+      "_id": { "$oid": "674e00000000000000000001" },
+      "userId": { "$oid": "674a00000000000000000006" },
+      "serviceCategory": "electrician",
+      "yearsOfExperience": "8",
+      "serviceAreas": ["Mohammadpur", "Dhanmondi", "Mirpur", "Banani"],
+      "tradeCertificate": {
+        "publicId": "thikana/docs/hasan_trade_cert",
+        "resourceType": "image",
+        "format": "jpg",
+        "secureUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/docs/hasan_trade_cert.jpg",
+        "uploadedAt": { "$date": "2025-04-08T10:30:00.000Z" }
+      },
+      "bio": "Licensed electrician. Fan, wiring, MCB, and inverter setup. Same-day service in Dhaka.",
+      "pricingItems": [
+        { "name": "Fan installation", "priceBdt": 300 },
+        { "name": "Switch/socket repair", "priceBdt": 200 },
+        { "name": "Full room wiring", "priceBdt": 3500 }
+      ],
+      "availabilityDays": ["mon", "tue", "wed", "thu", "fri", "sat"],
+      "workingHours": { "start": "09:00", "end": "19:00" },
+      "createdAt": { "$date": "2025-04-10T08:30:00.000Z" },
+      "updatedAt": { "$date": "2025-04-10T08:30:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674e00000000000000000002" },
+      "userId": { "$oid": "674a00000000000000000007" },
+      "serviceCategory": "plumber",
+      "yearsOfExperience": "5",
+      "serviceAreas": ["Mirpur", "Pallabi", "Uttara"],
+      "bio": "Pipe leak, tap repair, bathroom fitting specialist.",
+      "pricingItems": [
+        { "name": "Tap repair", "priceBdt": 250 },
+        { "name": "Pipe leak fix", "priceBdt": 500 },
+        { "name": "Commode installation", "priceBdt": 800 }
+      ],
+      "availabilityDays": ["mon", "wed", "fri", "sat", "sun"],
+      "workingHours": { "start": "10:00", "end": "18:00" },
+      "createdAt": { "$date": "2025-04-15T09:30:00.000Z" },
+      "updatedAt": { "$date": "2025-04-15T09:30:00.000Z" }
+    }
+  ],
+  "listings": [
+    {
+      "_id": { "$oid": "674b00000000000000000001" },
+      "ownerId": { "$oid": "674a00000000000000000004" },
+      "title": "Spacious 2 Bed Flat in Banani — Near Gulshan Circle 2",
+      "slug": "spacious-2-bed-flat-banani-gulshan",
+      "propertyType": "Apartment",
+      "description": "Fully furnished 2 bedroom flat with balcony. Gas line, lift, and 24/7 security. Ideal for small families or working professionals.",
+      "houseRules": "No smoking inside. Visitors allowed till 10 PM. One month advance + one month deposit required.",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Banani",
+        "street": "Road 11, Block C"
+      },
+      "floorLevel": "5th Floor",
+      "sizeSqft": 950,
+      "beds": 2,
+      "baths": 2,
+      "monthlyRent": 28000,
+      "availableFrom": { "$date": "2026-09-01T00:00:00.000Z" },
+      "whoCanRent": ["Family", "Any"],
+      "amenities": ["Lift", "Gas", "Parking", "Security", "Balcony", "WiFi Ready"],
+      "locationMapUrl": "https://maps.google.com/?q=23.7937,90.4066",
+      "locationLat": 23.7937,
+      "locationLng": 90.4066,
+      "images": [
+        {
+          "publicId": "thikana/listings/banani_flat_living",
+          "resourceType": "image",
+          "format": "jpg",
+          "secureUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/listings/banani_flat_living.jpg",
+          "uploadedAt": { "$date": "2025-09-01T10:00:00.000Z" }
+        },
+        {
+          "publicId": "thikana/listings/banani_flat_bedroom",
+          "resourceType": "image",
+          "format": "jpg",
+          "secureUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/listings/banani_flat_bedroom.jpg",
+          "uploadedAt": { "$date": "2025-09-01T10:05:00.000Z" }
+        }
+      ],
+      "coverImageUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/listings/banani_flat_living.jpg",
+      "status": "live",
+      "reviewStepIndex": 4,
+      "reviewChecklist": [
+        { "id": "photos", "label": "Photos verified", "status": "ok" },
+        { "id": "address", "label": "Address verified", "status": "ok" },
+        { "id": "rent", "label": "Rent amount reasonable", "status": "ok" }
+      ],
+      "views": 142,
+      "bookingsCount": 2,
+      "submittedAt": { "$date": "2025-09-01T09:00:00.000Z" },
+      "approvedAt": { "$date": "2025-09-02T14:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "createdAt": { "$date": "2025-08-28T08:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-10T16:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674b00000000000000000002" },
+      "ownerId": { "$oid": "674a00000000000000000004" },
+      "title": "Bachelor Room in Mirpur Section 10 — Shared Kitchen",
+      "slug": "bachelor-room-mirpur-section-10",
+      "propertyType": "Room",
+      "description": "Clean single room for bachelor. Shared kitchen and bathroom. Near Mirpur 10 metro station.",
+      "houseRules": "Bachelors only. No pets. Kitchen use after 7 AM.",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Mirpur",
+        "street": "Section 10, Block A"
+      },
+      "floorLevel": "3rd Floor",
+      "sizeSqft": 180,
+      "beds": 1,
+      "baths": 1,
+      "monthlyRent": 7500,
+      "availableFrom": { "$date": "2026-08-20T00:00:00.000Z" },
+      "whoCanRent": ["Bachelor"],
+      "amenities": ["Gas", "WiFi", "Metro Nearby"],
+      "locationLat": 23.8067,
+      "locationLng": 90.3683,
+      "coverImageUrl": "https://res.cloudinary.com/thikana/image/upload/v1/thikana/listings/mirpur_room.jpg",
+      "status": "live",
+      "views": 89,
+      "bookingsCount": 1,
+      "submittedAt": { "$date": "2025-10-05T11:00:00.000Z" },
+      "approvedAt": { "$date": "2025-10-06T09:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "createdAt": { "$date": "2025-10-04T07:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-05T12:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674b00000000000000000003" },
+      "ownerId": { "$oid": "674a00000000000000000005" },
+      "title": "Student-Friendly Mess near Dhanmondi Lake",
+      "slug": "student-mess-dhanmondi-lake",
+      "propertyType": "Mess / Hostel",
+      "description": "3 meals included. High-speed WiFi. Quiet study environment. 5 min walk from Dhanmondi Lake.",
+      "houseRules": "Students only. Gate closes at 11 PM. No cooking in rooms.",
+      "address": {
+        "division": "Dhaka",
+        "district": "Dhaka",
+        "area": "Dhanmondi",
+        "street": "Road 27 (Old)"
+      },
+      "floorLevel": "2nd Floor",
+      "sizeSqft": 120,
+      "beds": 1,
+      "baths": 1,
+      "monthlyRent": 8500,
+      "availableFrom": { "$date": "2026-09-15T00:00:00.000Z" },
+      "whoCanRent": ["Bachelor"],
+      "amenities": ["Meals Included", "WiFi", "Study Room", "Security"],
+      "locationLat": 23.7461,
+      "locationLng": 90.3742,
+      "status": "live",
+      "views": 56,
+      "bookingsCount": 0,
+      "submittedAt": { "$date": "2026-01-10T10:00:00.000Z" },
+      "approvedAt": { "$date": "2026-01-11T11:00:00.000Z" },
+      "approvedBy": { "$oid": "674a00000000000000000001" },
+      "createdAt": { "$date": "2026-01-09T08:00:00.000Z" },
+      "updatedAt": { "$date": "2026-01-11T11:00:00.000Z" }
+    }
+  ],
+  "bookings": [
+    {
+      "_id": { "$oid": "674f00000000000000000001" },
+      "tenantId": { "$oid": "674a00000000000000000002" },
+      "ownerId": { "$oid": "674a00000000000000000004" },
+      "listingId": { "$oid": "674b00000000000000000002" },
+      "status": "pending",
+      "message": "Assalamualaikum, ami Mirpur e job kori. Ei room ta dekhte chai — Saturday available?",
+      "createdAt": { "$date": "2026-08-12T15:30:00.000Z" },
+      "updatedAt": { "$date": "2026-08-12T15:30:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "674f00000000000000000002" },
+      "tenantId": { "$oid": "674a00000000000000000003" },
+      "ownerId": { "$oid": "674a00000000000000000005" },
+      "listingId": { "$oid": "674b00000000000000000003" },
+      "status": "approved",
+      "message": "I am a BRAC University student looking for a mess near campus.",
+      "createdAt": { "$date": "2026-08-01T10:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-02T09:00:00.000Z" }
+    }
+  ],
+  "savedhomes": [
+    {
+      "_id": { "$oid": "675000000000000000000001" },
+      "tenantId": { "$oid": "674a00000000000000000002" },
+      "listingId": { "$oid": "674b00000000000000000001" },
+      "createdAt": { "$date": "2026-08-10T11:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-10T11:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "675000000000000000000002" },
+      "tenantId": { "$oid": "674a00000000000000000002" },
+      "listingId": { "$oid": "674b00000000000000000002" },
+      "createdAt": { "$date": "2026-08-11T09:30:00.000Z" },
+      "updatedAt": { "$date": "2026-08-11T09:30:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "675000000000000000000003" },
+      "tenantId": { "$oid": "674a00000000000000000003" },
+      "listingId": { "$oid": "674b00000000000000000003" },
+      "createdAt": { "$date": "2026-08-05T14:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-05T14:00:00.000Z" }
+    }
+  ],
+  "servicerequests": [
+    {
+      "_id": { "$oid": "675100000000000000000001" },
+      "tenantId": { "$oid": "674a00000000000000000002" },
+      "providerId": { "$oid": "674a00000000000000000006" },
+      "serviceCategory": "electrician",
+      "description": "Bedroom fan making noise and sometimes stops. Need inspection and repair.",
+      "address": "Mirpur Section 11, House 45, Flat 4B",
+      "scheduledAt": { "$date": "2026-08-16T10:00:00.000Z" },
+      "durationMinutes": 60,
+      "amountBdt": 300,
+      "status": "pending",
+      "createdAt": { "$date": "2026-08-14T08:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-14T08:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "675100000000000000000002" },
+      "tenantId": { "$oid": "674a00000000000000000003" },
+      "providerId": { "$oid": "674a00000000000000000007" },
+      "serviceCategory": "plumber",
+      "description": "Kitchen sink pipe leaking under the cabinet.",
+      "address": "Dhanmondi Road 5, House 12",
+      "scheduledAt": { "$date": "2026-08-10T14:00:00.000Z" },
+      "durationMinutes": 90,
+      "amountBdt": 500,
+      "status": "completed",
+      "completedAt": { "$date": "2026-08-10T16:30:00.000Z" },
+      "createdAt": { "$date": "2026-08-09T12:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-10T16:30:00.000Z" }
+    }
+  ],
+  "providerreviews": [
+    {
+      "_id": { "$oid": "675200000000000000000001" },
+      "serviceRequestId": { "$oid": "675100000000000000000002" },
+      "providerId": { "$oid": "674a00000000000000000007" },
+      "tenantId": { "$oid": "674a00000000000000000003" },
+      "rating": 5,
+      "comment": "Jamal bhai arrived on time and fixed the leak quickly. Very professional.",
+      "reply": {
+        "text": "Thank you! Call anytime if you need help again.",
+        "repliedAt": { "$date": "2026-08-11T09:00:00.000Z" }
+      },
+      "createdAt": { "$date": "2026-08-10T18:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-11T09:00:00.000Z" }
+    }
+  ],
+  "conversations": [
+    {
+      "_id": { "$oid": "675300000000000000000001" },
+      "participantKey": "674a00000000000000000002:674a00000000000000000004",
+      "participants": [
+        { "$oid": "674a00000000000000000002" },
+        { "$oid": "674a00000000000000000004" }
+      ],
+      "lastMessageText": "Saturday 4 PM visit korte parben?",
+      "lastMessageAt": { "$date": "2026-08-13T16:00:00.000Z" },
+      "lastSenderId": { "$oid": "674a00000000000000000002" },
+      "unreadBy": {
+        "674a00000000000000000004": 1
+      },
+      "createdAt": { "$date": "2026-08-12T15:35:00.000Z" },
+      "updatedAt": { "$date": "2026-08-13T16:00:00.000Z" }
+    }
+  ],
+  "messages": [
+    {
+      "_id": { "$oid": "675400000000000000000001" },
+      "conversationId": { "$oid": "675300000000000000000001" },
+      "senderId": { "$oid": "674a00000000000000000002" },
+      "body": "Assalamualaikum, Mirpur er room ta niye jante chacchi. Visit kora jabe?",
+      "createdAt": { "$date": "2026-08-12T15:35:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "675400000000000000000002" },
+      "conversationId": { "$oid": "675300000000000000000001" },
+      "senderId": { "$oid": "674a00000000000000000004" },
+      "body": "Waalaikum assalam. Room available ache. Friday ba Saturday visit korte parben.",
+      "createdAt": { "$date": "2026-08-13T10:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "675400000000000000000003" },
+      "conversationId": { "$oid": "675300000000000000000001" },
+      "senderId": { "$oid": "674a00000000000000000002" },
+      "body": "Saturday 4 PM visit korte parben?",
+      "createdAt": { "$date": "2026-08-13T16:00:00.000Z" }
+    }
+  ],
+  "supporttickets": [
+    {
+      "_id": { "$oid": "675500000000000000000001" },
+      "ticketNumber": "TK-2026-0001",
+      "fullName": "Rahim Uddin",
+      "email": "rahim.tenant@gmail.com",
+      "userRole": "tenant",
+      "subject": "Booking status not updating",
+      "message": "I submitted a booking 2 days ago but it still shows pending. Owner said he approved it.",
+      "fileName": null,
+      "attachmentUrl": null,
+      "status": "in_progress",
+      "priority": "Medium",
+      "messages": [
+        {
+          "sender": "user",
+          "body": "I submitted a booking 2 days ago but it still shows pending. Owner said he approved it.",
+          "time": "2026-08-13T10:00",
+          "initials": "RU",
+          "createdAt": { "$date": "2026-08-13T10:00:00.000Z" }
+        },
+        {
+          "sender": "admin",
+          "body": "We are checking your booking request. Will update within 24 hours.",
+          "time": "2026-08-13T14:30",
+          "initials": "TA",
+          "createdAt": { "$date": "2026-08-13T14:30:00.000Z" }
+        }
+      ],
+      "createdAt": { "$date": "2026-08-13T10:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-13T14:30:00.000Z" }
+    }
+  ],
+  "auditlogs": [
+    {
+      "_id": { "$oid": "675600000000000000000001" },
+      "actorId": { "$oid": "674a00000000000000000001" },
+      "actorRole": "admin",
+      "action": "USER_APPROVED",
+      "targetUserId": { "$oid": "674a00000000000000000002" },
+      "previousValue": { "approvalStatus": "pending" },
+      "newValue": { "approvalStatus": "approved", "accountStatus": "active" },
+      "note": "NID and profile verified",
+      "ipAddress": "103.106.0.1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+      "createdAt": { "$date": "2025-06-02T09:00:00.000Z" }
+    },
+    {
+      "_id": { "$oid": "675600000000000000000002" },
+      "actorId": { "$oid": "674a00000000000000000001" },
+      "actorRole": "admin",
+      "action": "LISTING_APPROVED",
+      "targetUserId": { "$oid": "674a00000000000000000004" },
+      "previousValue": { "status": "under_review" },
+      "newValue": { "status": "live" },
+      "note": "Banani 2 bed flat approved",
+      "ipAddress": "103.106.0.1",
+      "createdAt": { "$date": "2025-09-02T14:00:00.000Z" }
+    }
+  ],
+  "emailverifications": [
+    {
+      "_id": { "$oid": "675700000000000000000001" },
+      "firebaseUid": "firebase_pending_uid_001",
+      "email": "newuser@gmail.com",
+      "otpHash": "$2b$10$examplehashedotpvalue1234567890123456789012",
+      "attempts": 0,
+      "lastSentAt": { "$date": "2026-08-14T12:00:00.000Z" },
+      "expiresAt": { "$date": "2026-08-14T12:10:00.000Z" },
+      "createdAt": { "$date": "2026-08-14T12:00:00.000Z" },
+      "updatedAt": { "$date": "2026-08-14T12:00:00.000Z" }
+    }
+  ]
+}

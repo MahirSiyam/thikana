@@ -1,4 +1,4 @@
-import { platformActivitySeries } from "@/features/admin-overview/data/admin-overview.mock";
+import type { PlatformActivitySeriesPoint } from "@/features/admin-overview/types/admin-overview.types";
 
 function toPolyline(values: number[], width: number, height: number): string {
   if (values.length === 0) return "";
@@ -12,11 +12,41 @@ function toPolyline(values: number[], width: number, height: number): string {
     .join(" ");
 }
 
-export function AdminPlatformActivityChart() {
+/**
+ * Normalize raw daily counts into 0..100 plot space so the polyline shape
+ * matches the Figma spec regardless of how active the platform is.
+ */
+function normalizeSeries(
+  points: PlatformActivitySeriesPoint[]
+): { users: number[]; listings: number[]; peak: number } {
+  if (points.length === 0) return { users: [], listings: [], peak: 0 };
+  let peak = 1;
+  for (const point of points) {
+    if (point.userCount > peak) peak = point.userCount;
+    if (point.listingCount > peak) peak = point.listingCount;
+  }
+  const scale = (value: number) => (value / peak) * 100;
+  return {
+    users: points.map((point) => scale(point.userCount)),
+    listings: points.map((point) => scale(point.listingCount)),
+    peak,
+  };
+}
+
+function formatBucketLabel(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+export function AdminPlatformActivityChart({
+  series,
+}: {
+  series: PlatformActivitySeriesPoint[];
+}) {
   const width = 636;
   const height = 240;
-  const users = platformActivitySeries.map((point) => point.users);
-  const listings = platformActivitySeries.map((point) => point.listings);
+  const { users, listings } = normalizeSeries(series);
 
   return (
     <section
@@ -82,6 +112,12 @@ export function AdminPlatformActivityChart() {
           </div>
         </div>
       </div>
+
+      {series.length > 0 ? (
+        <p className="font-inter text-[11px] text-[#94a3b8]">
+          {formatBucketLabel(series[0].date)} – {formatBucketLabel(series[series.length - 1].date)}
+        </p>
+      ) : null}
     </section>
   );
 }

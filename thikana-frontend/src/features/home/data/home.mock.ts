@@ -1,7 +1,6 @@
 import type {
   HeroStat,
   HomeService,
-  Testimonial,
   TrustFeature,
   VerificationStep,
 } from "@/features/home/types/home.types";
@@ -82,36 +81,6 @@ export const trustFeatures: TrustFeature[] = [
     id: "providers",
     label: "Trusted service providers",
     iconSrc: "/images/home/verify-trust-providers.svg",
-  },
-];
-
-export const testimonials: Testimonial[] = [
-  {
-    id: "masum",
-    name: "Masum Ahmed",
-    role: "",
-    quote:
-      "We found a family apartment without paying broker fees. The verified badge made us feel much more confident before contacting the owner. We found a family apartment without paying broker fees. The verified badge made us feel much more confident before contacting the owner.",
-    rating: 5,
-    avatarSrc: "/images/home/reviewer-masum-ahmed.webp",
-  },
-  {
-    id: "karim",
-    name: "Karim Mia",
-    role: "Banker",
-    quote:
-      "We found a family apartment without paying broker fees. The verified badge made us feel much more confident before contacting the owner. We found a family apartment without paying broker fees. The verified badge made us feel much more confident before contacting the owner.",
-    rating: 5,
-    avatarSrc: "/images/home/reviewer-karim-mia.webp",
-  },
-  {
-    id: "rahim",
-    name: "Rahim Ahmed",
-    role: "Store Manager",
-    quote:
-      "We found a family apartment without paying broker fees. The verified badge made us feel much more confident before contacting the owner. We found a family apartment without paying broker fees. The verified badge made us feel much more confident before contacting the owner.",
-    rating: 5,
-    avatarSrc: "/images/home/reviewer-rahim-ahmed.webp",
   },
 ];
 

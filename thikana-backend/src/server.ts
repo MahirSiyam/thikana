@@ -7,6 +7,7 @@ import { verifyMailConnection } from "./config/mailer";
 import adminRoutes from "./routes/admin.routes";
 import authRoutes from "./routes/auth.routes";
 import emailVerificationRoutes from "./routes/email-verification.routes";
+import featuredReviewsRoutes from "./routes/featured-reviews.routes";
 import listingRoutes from "./routes/listing.routes";
 import messageRoutes from "./routes/message.routes";
 import providerRoutes from "./routes/provider.routes";
@@ -53,6 +54,7 @@ app.use("/api/tenant", tenantRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/support", supportRoutes);
+app.use("/api/featured-reviews", featuredReviewsRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
